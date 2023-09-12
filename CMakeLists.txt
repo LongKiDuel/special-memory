@@ -21,3 +21,6 @@ set(CPACK_PACKAGE_FILE_NAME update_server_package)
 include(CPack)
 
 include(GNUInstallDirs)
+
+find_package(benchmark CONFIG REQUIRED)
+target_link_libraries(main PRIVATE benchmark::benchmark benchmark::benchmark_main)
