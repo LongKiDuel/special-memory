@@ -51,7 +51,7 @@ static void BM_Find(benchmark::State& state){
     }
 }
 
-BENCHMARK(BM_Find)->RangeMultiplier(2)->Range(1, 1 << 16);
+BENCHMARK(BM_Find)->RangeMultiplier(2)->Range(1, 1 << 16)->Complexity();
 
 static void BM_Find_hash_map(benchmark::State& state){
     std::unordered_map<int,int> buffer;
@@ -66,7 +66,7 @@ static void BM_Find_hash_map(benchmark::State& state){
     }
 }
 
-BENCHMARK(BM_Find_hash_map)->RangeMultiplier(2)->Range(1, 1 << 16);
+BENCHMARK(BM_Find_hash_map)->RangeMultiplier(2)->Range(1, 1 << 16)->Complexity();
 
 static void BM_Find_map(benchmark::State& state){
     std::map<int,int> buffer;
@@ -81,4 +81,4 @@ static void BM_Find_map(benchmark::State& state){
     }
 }
 
-BENCHMARK(BM_Find_map)->RangeMultiplier(2)->Range(1, 1 << 16);
+BENCHMARK(BM_Find_map)->RangeMultiplier(2)->Range(1, 1 << 16)->Complexity();
