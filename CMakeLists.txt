@@ -11,7 +11,9 @@ target_link_libraries(main PRIVATE fmt::fmt)
 
 enable_testing()
 add_subdirectory(test)
- 
+
+add_subdirectory(benchmark)
+
 install(TARGETS main DESTINATION bin)
 # install(TARGETS $<TARGET_RUNTIME_DLLS:main> DESTINATION bin)
 
@@ -21,3 +23,4 @@ set(CPACK_PACKAGE_FILE_NAME update_server_package)
 include(CPack)
 
 include(GNUInstallDirs)
+
