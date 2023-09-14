@@ -3,10 +3,12 @@
 #include <cstring>
 #include <ctime>
 #include <drogon/HttpRequest.h>
+#include <drogon/HttpResponse.h>
 #include <drogon/utils/FunctionTraits.h>
 #include <filesystem>
 #include <json/reader.h>
 #include <json/value.h>
+#include <optional>
 #include <ostream>
 #include <string>
 
@@ -64,6 +66,14 @@ File_info read_file_info(const std::filesystem::path &p) {
   return info;
 }
 
+std::optional<std::string> generate_weak_etag(std::filesystem::path file) {
+  if (std::filesystem::is_regular_file(file)) {
+    return std::to_string(
+        std::filesystem::last_write_time(file).time_since_epoch().count());
+  }
+  return {};
+}
+
 Json::Value file_info_to_json(const File_info &info) {
   Json::Value json;
 
@@ -73,6 +83,10 @@ Json::Value file_info_to_json(const File_info &info) {
   json["write_time"] = info.write_time;
 
   return json;
+}
+
+void allow_cors(auto &response) {
+  response->addHeader("Access-Control-Allow-Origin", "*");
 }
 
 void api::v1::Files::getInfo(
@@ -146,6 +160,15 @@ void api::v1::Files::getFetch(
     reportFailure();
     return;
   }
+  std::optional<std::string> etag = generate_weak_etag(path);
+  auto request_etag = req->getHeader("If-None-Match");
+  if (!request_etag.empty() && etag && (*etag == request_etag)) {
+    auto response = HttpResponse::newHttpResponse();
+    response->setStatusCode(HttpStatusCode::k304NotModified);
+    allow_cors(response);
+    callback(response);
+    return;
+  }
 
   HttpResponsePtr response;
   if (std::filesystem::is_directory(path)) {
@@ -172,6 +195,8 @@ void api::v1::Files::getFetch(
                       fetch_type + "; filename=\"" +
                           std::filesystem::path(path).filename().string() +
                           "\"");
-
+  if (etag) {
+    response->addHeader("ETag", *etag);
+  }
   callback(response);
 }
