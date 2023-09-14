@@ -155,7 +155,8 @@ void api::v1::Files::getFetch(
     }
     path = (*jsonPtr)["path"].asString();
   }
-  std::cout << "fetch path: " << path << "\n";
+  auto host = req->getHeader("Host");
+  std::cout << "fetch path: " << path << " from "<< host << "\n";
   if (!std::filesystem::exists(path)) {
     reportFailure();
     return;
@@ -198,5 +199,9 @@ void api::v1::Files::getFetch(
   if (etag) {
     response->addHeader("ETag", *etag);
   }
+  // if(response->getHeader("Content-Type").empty()){
+  //   response->removeHeader("Content-Type");
+  //   response->addHeader("Content-Type","text/html; charset=utf-8");
+  // }
   callback(response);
 }
