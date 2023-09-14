@@ -6,6 +6,11 @@
         "fmt",
         "gtest",
         "benchmark",
-        "drogon"
+        {
+            "name":"drogon",
+            "features":[
+                "postgres"
+            ]
+        }
     ]
 }
