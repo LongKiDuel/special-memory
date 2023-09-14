@@ -4,6 +4,7 @@
 #include <ctime>
 #include <drogon/HttpRequest.h>
 #include <drogon/HttpResponse.h>
+#include <drogon/HttpTypes.h>
 #include <drogon/utils/FunctionTraits.h>
 #include <filesystem>
 #include <json/reader.h>
@@ -156,7 +157,7 @@ void api::v1::Files::getFetch(
     path = (*jsonPtr)["path"].asString();
   }
   auto host = req->getHeader("Host");
-  std::cout << "fetch path: " << path << " from "<< host << "\n";
+  std::cout << "fetch path: " << path << " from " << host << "\n";
   if (!std::filesystem::exists(path)) {
     reportFailure();
     return;
@@ -199,9 +200,15 @@ void api::v1::Files::getFetch(
   if (etag) {
     response->addHeader("ETag", *etag);
   }
-  // if(response->getHeader("Content-Type").empty()){
-  //   response->removeHeader("Content-Type");
-  //   response->addHeader("Content-Type","text/html; charset=utf-8");
-  // }
+  if (as_view &&
+      response->contentType() == ContentType::CT_APPLICATION_OCTET_STREAM) {
+    response->setContentTypeCode(ContentType::CT_TEXT_PLAIN);
+    // response->addHeader("Content-Type","text/html; charset=utf-8");
+  }
+
+  auto my_ip = req->getCookie("my-ip");
+  if (my_ip.empty()) {
+    response->addCookie("my-ip", req->getPeerAddr().toIpPort());
+  }
   callback(response);
 }
