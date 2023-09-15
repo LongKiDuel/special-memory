@@ -1,10 +1,12 @@
 /// The header file
 #pragma once
+#include <cstdint>
 #include <drogon/HttpController.h>
 #include <drogon/HttpResponse.h>
 #include <drogon/HttpTypes.h>
 #include <json/value.h>
 #include <string>
+#include <unordered_map>
 using namespace drogon;
 namespace api {
 namespace v1 {
@@ -22,8 +24,13 @@ public:
                  std::function<void(const HttpResponsePtr &)> &&callback) const;
 
 private:
-std::string buffer_;
-bool finished_{};
+struct Build_task{
+  std::string path_;
+  bool finished_{};
+  std::string output_buffer_;
+};
+std::unordered_map<uint64_t, Build_task> tasks_;
+void next_task(uint64_t *id, Build_task **task);
 };
 } // namespace v1
 } // namespace api
