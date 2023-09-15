@@ -1,5 +1,6 @@
 #pragma once
 
+#include "linear_find.h"
 #include <filesystem>
 #include <set>
 #include <unordered_set>
@@ -18,7 +19,20 @@ find_all_git_repo(std::filesystem::path root) {
       if (path.filename() == ".git") {
         auto absolute_path = std::filesystem::absolute(start->path());
 
-        pathes.insert(absolute_path.parent_path());
+        std::vector<std::string> exclude_dirs = {
+            ".local",
+            ".cache",
+        };
+        bool skip = false;
+        for (auto p : absolute_path) {
+          if (linear_find(exclude_dirs, p)) {
+            skip = true;
+            break;
+          }
+        }
+        if (!skip) {
+          pathes.insert(absolute_path.parent_path());
+        }
       }
     }
     start++;
