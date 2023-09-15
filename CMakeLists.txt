@@ -5,6 +5,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 20)
 
 add_executable(main main.cpp)
+add_executable(test-main test-main.cpp)
 
 find_package(Drogon CONFIG REQUIRED)
 target_link_libraries(main PRIVATE Drogon::Drogon)
