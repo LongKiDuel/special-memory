@@ -46,7 +46,12 @@ void api::v1::CMake::build(
   uint64_t id{};
   Build_task *task{};
 
-  next_task(&id, &task);
+  auto lock = next_task(p, &id, &task);
+  if (!lock) {
+    callback(HttpResponse::newRedirectionResponse(
+        std::format("build-log?id={}", id)));
+    return;
+  }
 
   auto r = HttpResponse::newHttpResponse();
   r->setBody(std::format("id:{}", id));
@@ -54,9 +59,9 @@ void api::v1::CMake::build(
   r->setContentTypeCode(ContentType::CT_TEXT_PLAIN);
   callback(r);
 
-  std::thread t{[cmd, id, task] {
+  std::thread t{[cmd, id, task, lock] {
     auto result = executeCommand(cmd.c_str(), [task](auto stream_input) {
-      task->output_buffer_ += stream_input;
+      task->append_buffer(stream_input);
     });
     task->finished_ = true;
   }};
@@ -72,16 +77,23 @@ void api::v1::CMake::build_log(
     return;
   }
   auto &task = tasks_.find(id)->second;
-  r->setBody(task.output_buffer_);
+  r->setBody(task.read_buffer());
   if (!task.finished_) {
     r->addHeader("Refresh", "1;"); // url=xxx
   }
   r->setContentTypeCode(ContentType::CT_TEXT_PLAIN);
   callback(r);
 }
-void api::v1::CMake::next_task(uint64_t *id, Build_task **task) {
+std::optional<std::any>
+api::v1::CMake::next_task(std::string path, uint64_t *id, Build_task **task) {
+  auto obj = lock_task(path);
+  if (!obj) {
+    *id = locks_[path].id;
+    return {};
+  }
   auto i = tasks_.size();
   *id = i;
   auto &t = tasks_[i];
   *task = &t;
+  return std::move(obj);
 }
