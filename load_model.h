@@ -6,6 +6,7 @@
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
 #include <complex>
+#include <cstdint>
 #include <filesystem>
 #include <optional>
 #include <spdlog/spdlog.h>
@@ -35,6 +36,9 @@ inline void task_scene_node(const aiScene *root, aiNode *node, Model &model) {
   for (uint64_t i{}; i < node->mNumMeshes; i++) {
     auto mesh = root->mMeshes[node->mMeshes[i]];
     model.meshes.push_back(task_mesh(mesh));
+  }
+  for (uint64_t i{}; i < node->mNumChildren; i++) {
+    task_scene_node(root, node->mChildren[i], model);
   }
 }
 
