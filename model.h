@@ -10,6 +10,8 @@
 struct Mesh {
   std::vector<glm::vec3> points;
   std::vector<glm::vec2> uv;
+
+  std::vector<uint32_t> indices;
 };
 
 struct Model {

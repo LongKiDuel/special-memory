@@ -36,6 +36,15 @@ inline Mesh task_mesh(aiMesh *mesh) {
       m.uv.push_back(uv);
     }
   }
+
+  for (uint64_t i{}; i < mesh->mNumFaces; i++) {
+    auto &face = mesh->mFaces[i];
+
+    for (uint64_t j{}; j < face.mNumIndices; j++) {
+      m.indices.push_back(face.mIndices[j]);
+    }
+  }
+  
   return m;
 }
 
