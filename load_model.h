@@ -5,6 +5,10 @@
 #include <assimp/mesh.h>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
+#include <complex>
+#include <filesystem>
+#include <optional>
+#include <spdlog/spdlog.h>
 #include <string>
 
 void copy_xyz(const auto &src, auto &dest) {
@@ -34,13 +38,22 @@ inline void task_scene_node(const aiScene *root, aiNode *node, Model &model) {
   }
 }
 
-inline Model load_model(std::string path) {
+inline std::optional<Model> load_model(std::string path) {
+  if (!std::filesystem::exists(path)) {
+    SPDLOG_ERROR("failed to load model, file not exist: {}", path);
+    return {};
+  }
   Model m;
 
   Assimp::Importer importer;
 
   auto scene =
       importer.ReadFile(path, aiPostProcessSteps::aiProcess_Triangulate);
+
+  if (!scene) {
+    SPDLOG_ERROR("failed to load model: {}", path);
+    return {};
+  }
 
   task_scene_node(scene, scene->mRootNode, m);
 

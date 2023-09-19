@@ -2,7 +2,7 @@
 #include "report_model.h"
 #include <spdlog/spdlog.h>
 int main() {
-  auto model = load_model("/home/nanami/Downloads/lucy.obj");
+  auto model = load_model("/home/nanami/Downloads/lucy.obj").value();
 
   SPDLOG_INFO(report_model_all(model));
 }
