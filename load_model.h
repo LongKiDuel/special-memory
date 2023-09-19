@@ -55,6 +55,8 @@ inline std::optional<Model> load_model(std::string path) {
     return {};
   }
 
+  SPDLOG_INFO("model {} has {} meshes", path, scene->mNumMeshes);
+
   task_scene_node(scene, scene->mRootNode, m);
 
   return m;
