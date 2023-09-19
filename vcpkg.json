@@ -6,6 +6,8 @@
         "fmt",
         "gtest",
         "benchmark",
-        "assimp"
+        "assimp",
+        "glm",
+        "spdlog"
     ]
 }
