@@ -8,6 +8,7 @@
 #include <complex>
 #include <cstdint>
 #include <filesystem>
+#include <glm/ext/vector_float2.hpp>
 #include <optional>
 #include <spdlog/spdlog.h>
 #include <string>
@@ -17,14 +18,23 @@ void copy_xyz(const auto &src, auto &dest) {
   dest.y = src.y;
   dest.z = src.z;
 }
-
+void copy_xy(const auto &src, auto &dest) {
+  dest.x = src.x;
+  dest.y = src.y;
+}
 inline Mesh task_mesh(aiMesh *mesh) {
   Mesh m;
+  auto uv_array = mesh->mTextureCoords[0];
   for (uint64_t i{}; i < mesh->mNumVertices; i++) {
     glm::vec3 vertex{};
     const auto &v = mesh->mVertices[i];
     copy_xyz(v, vertex);
     m.points.push_back(vertex);
+    if (uv_array) {
+      glm::vec2 uv{};
+      copy_xy(uv_array[i], uv);
+      m.uv.push_back(uv);
+    }
   }
   return m;
 }
