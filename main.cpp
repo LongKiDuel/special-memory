@@ -1,3 +1,3 @@
 int main(){
-  return 0;
+  load_model("/home/nanami/Downloads/lucy.obj");
 }
