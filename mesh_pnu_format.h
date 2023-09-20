@@ -47,7 +47,7 @@ struct Mesh_pnu_format {
       vertices_pos[v] = pos;
     }
     vertices = std::move(new_vertices);
-    new_indices = std::move(new_indices);
+    indices = std::move(new_indices);
   }
 
   std::string report() const {
