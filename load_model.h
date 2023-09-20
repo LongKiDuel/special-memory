@@ -5,6 +5,7 @@
 #include <assimp/mesh.h>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
+#include <assimp/types.h>
 #include <complex>
 #include <cstdint>
 #include <filesystem>
@@ -78,6 +79,9 @@ inline std::optional<Model> load_model(std::string path) {
                      aiPostProcessSteps::aiProcess_FixInfacingNormals |
                      aiPostProcessSteps::aiProcess_ImproveCacheLocality;
   auto scene = importer.ReadFile(path, postprocess);
+  aiMemoryInfo memory_info{};
+  importer.GetMemoryRequirements(memory_info);
+  SPDLOG_INFO("scene used memory: {}",memory_info.total);
 
   if (!scene) {
     SPDLOG_ERROR("failed to load model: {} reason: {}", path,
