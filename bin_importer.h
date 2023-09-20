@@ -7,6 +7,7 @@
 #include <assimp/IOSystem.hpp>
 #include <assimp/Importer.hpp>
 #include <assimp/mesh.h>
+#include <cassert>
 #include <cstdint>
 #include <glm/ext/vector_float3.hpp>
 class Bin_importer : public Assimp::BaseImporter {
@@ -59,7 +60,7 @@ class Bin_importer : public Assimp::BaseImporter {
     // Throw a  with a meaningful (!) error message if
     // something goes wrong.
     pScene->mRootNode->mNumMeshes = 1;
-    pScene->mRootNode->mMeshes = new uint32_t(0);
+    pScene->mRootNode->mMeshes = new uint32_t[1]{0};
 
     pScene->mNumMeshes = 1;
     pScene->mMeshes = new aiMesh *[1];
@@ -91,6 +92,7 @@ class Bin_importer : public Assimp::BaseImporter {
       }
       return n;
     };
+    mesh->mPrimitiveTypes =aiPrimitiveType_TRIANGLE;
     auto vertices_count = read_number() / (sizeof(glm::vec3) * 2);
     mesh->mNumVertices = vertices_count;
     mesh->mNormals = (aiVector3t<float> *)new glm::vec3[vertices_count];
@@ -106,20 +108,23 @@ class Bin_importer : public Assimp::BaseImporter {
     for (uint32_t i{}; i < mesh->mNumFaces; i++) {
       auto &face = mesh->mFaces[i];
       face.mNumIndices = 3;
-      face.mIndices = new uint32_t[3];
-      for (uint32_t j{}; j < 3; j++) {
-        face.mIndices[j] = read_uint32();
+      face.mIndices = new uint32_t[face.mNumIndices]{};
+      for (uint32_t j{}; j < face.mNumIndices; j++) {
+        auto id = read_uint32();
+        assert(id < vertices_count);
+        face.mIndices[j] = id;
       }
     }
     set_progress(3);
+    
   }
 
   const aiImporterDesc *GetInfo() const override {
-    auto desc = new aiImporterDesc;
-    desc->mName = "bin import";
-    desc->mFileExtensions = "plain3dv2";
+    static aiImporterDesc desc;
+    desc.mName = "bin import";
+    desc.mFileExtensions = "plain3dv2";
 
-    return desc;
+    return &desc;
   }
   private:
   void set_progress(int current){

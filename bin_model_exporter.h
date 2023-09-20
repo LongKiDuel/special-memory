@@ -2,6 +2,7 @@
 
 #include "mesh_pnu_format.h"
 #include "vertex.h"
+#include <cassert>
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
@@ -27,6 +28,8 @@ inline bool bin_model_exporter(Mesh_pnu_format &mesh,
   }
   write_number(mesh.indices.size() * sizeof(uint32_t));
   for (auto i : mesh.indices) {
+    [[maybe_unused]] const auto size = mesh.vertices.size();
+    assert(i < size);
     write_number(i);
   }
   return file.good();
