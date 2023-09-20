@@ -16,6 +16,7 @@
 
 #include "copy_vec.h"
 #include "bin_importer.h"
+#include "progress_bar.h"
 inline Mesh task_mesh(aiMesh *mesh) {
   Mesh m;
   auto uv_array = mesh->mTextureCoords[0];
@@ -70,6 +71,7 @@ inline std::optional<Model> load_model(std::string path) {
   
   Assimp::Importer importer;
   importer.RegisterLoader(new Bin_importer{});
+  importer.SetProgressHandler(new Progress_bar);
   auto postprocess = aiPostProcessSteps::aiProcess_Triangulate |
                      aiPostProcessSteps::aiProcess_GenNormals |
                      aiPostProcessSteps::aiProcess_JoinIdenticalVertices |
