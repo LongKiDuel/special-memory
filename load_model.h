@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <glm/ext/vector_float2.hpp>
+#include <glm/ext/vector_float3.hpp>
 #include <optional>
 #include <spdlog/spdlog.h>
 #include <string>
@@ -25,11 +26,17 @@ void copy_xy(const auto &src, auto &dest) {
 inline Mesh task_mesh(aiMesh *mesh) {
   Mesh m;
   auto uv_array = mesh->mTextureCoords[0];
+  auto normals_array = mesh->mNormals;
   for (uint64_t i{}; i < mesh->mNumVertices; i++) {
     glm::vec3 vertex{};
     const auto &v = mesh->mVertices[i];
     copy_xyz(v, vertex);
     m.points.push_back(vertex);
+    if (normals_array) {
+      glm::vec3 normal{};
+      copy_xyz(normals_array[i], normal);
+      m.normals.push_back(normal);
+    }
     if (uv_array) {
       glm::vec2 uv{};
       copy_xy(uv_array[i], uv);
@@ -69,8 +76,11 @@ inline std::optional<Model> load_model(std::string path) {
   Model m;
 
   Assimp::Importer importer;
-  auto postprocess = aiPostProcessSteps::aiProcess_Triangulate | aiPostProcessSteps::aiProcess_GenNormals | aiPostProcessSteps::aiProcess_JoinIdenticalVertices |aiPostProcessSteps::aiProcess_FixInfacingNormals |
-  aiPostProcessSteps::aiProcess_ImproveCacheLocality;
+  auto postprocess = aiPostProcessSteps::aiProcess_Triangulate |
+                     aiPostProcessSteps::aiProcess_GenNormals |
+                     aiPostProcessSteps::aiProcess_JoinIdenticalVertices |
+                     aiPostProcessSteps::aiProcess_FixInfacingNormals |
+                     aiPostProcessSteps::aiProcess_ImproveCacheLocality;
   auto scene = importer.ReadFile(path, postprocess);
 
   if (!scene) {

@@ -4,8 +4,9 @@
 #include <string>
 
 inline std::string report_mesh(const Mesh &mesh) {
-  return fmt::format("Mesh has {} points {} UV {} indices", mesh.points.size(),
-                     mesh.uv.size(), mesh.indices.size());
+  return fmt::format("Mesh has {} points {} normals {} UV {} indices",
+                     mesh.points.size(), mesh.normals.size(), mesh.uv.size(),
+                     mesh.indices.size());
 }
 
 inline std::string report_model(const Model &model) {
