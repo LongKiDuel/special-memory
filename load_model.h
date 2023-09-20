@@ -69,7 +69,8 @@ inline std::optional<Model> load_model(std::string path) {
   Model m;
 
   Assimp::Importer importer;
-  auto postprocess = aiPostProcessSteps::aiProcess_Triangulate;
+  auto postprocess = aiPostProcessSteps::aiProcess_Triangulate | aiPostProcessSteps::aiProcess_GenNormals | aiPostProcessSteps::aiProcess_JoinIdenticalVertices |aiPostProcessSteps::aiProcess_FixInfacingNormals |
+  aiPostProcessSteps::aiProcess_ImproveCacheLocality;
   auto scene = importer.ReadFile(path, postprocess);
 
   if (!scene) {
