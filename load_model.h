@@ -69,12 +69,12 @@ inline std::optional<Model> load_model(std::string path) {
   Model m;
 
   Assimp::Importer importer;
-
-  auto scene =
-      importer.ReadFile(path, aiPostProcessSteps::aiProcess_Triangulate);
+  auto postprocess = aiPostProcessSteps::aiProcess_Triangulate;
+  auto scene = importer.ReadFile(path, postprocess);
 
   if (!scene) {
-    SPDLOG_ERROR("failed to load model: {} reason: {}", path, importer.GetErrorString());
+    SPDLOG_ERROR("failed to load model: {} reason: {}", path,
+                 importer.GetErrorString());
     return {};
   }
 
