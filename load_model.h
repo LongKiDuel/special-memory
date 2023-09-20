@@ -44,7 +44,7 @@ inline Mesh task_mesh(aiMesh *mesh) {
       m.indices.push_back(face.mIndices[j]);
     }
   }
-  
+
   return m;
 }
 
@@ -74,7 +74,7 @@ inline std::optional<Model> load_model(std::string path) {
       importer.ReadFile(path, aiPostProcessSteps::aiProcess_Triangulate);
 
   if (!scene) {
-    SPDLOG_ERROR("failed to load model: {}", path);
+    SPDLOG_ERROR("failed to load model: {} reason: {}", path, importer.GetErrorString());
     return {};
   }
 
