@@ -14,15 +14,8 @@
 #include <spdlog/spdlog.h>
 #include <string>
 
-void copy_xyz(const auto &src, auto &dest) {
-  dest.x = src.x;
-  dest.y = src.y;
-  dest.z = src.z;
-}
-void copy_xy(const auto &src, auto &dest) {
-  dest.x = src.x;
-  dest.y = src.y;
-}
+#include "copy_vec.h"
+#include "bin_importer.h"
 inline Mesh task_mesh(aiMesh *mesh) {
   Mesh m;
   auto uv_array = mesh->mTextureCoords[0];
@@ -74,8 +67,9 @@ inline std::optional<Model> load_model(std::string path) {
     return {};
   }
   Model m;
-
+  
   Assimp::Importer importer;
+  importer.RegisterLoader(new Bin_importer{});
   auto postprocess = aiPostProcessSteps::aiProcess_Triangulate |
                      aiPostProcessSteps::aiProcess_GenNormals |
                      aiPostProcessSteps::aiProcess_JoinIdenticalVertices |
