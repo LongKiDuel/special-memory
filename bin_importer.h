@@ -65,6 +65,7 @@ class Bin_importer : public Assimp::BaseImporter {
     pScene->mMeshes = new aiMesh *[1];
     pScene->mMeshes[0] = new aiMesh{};
     auto mesh = pScene->mMeshes[0];
+    set_progress(1);
  
     auto read_number = [&file, &pFile]() {
       uint64_t n{};
@@ -98,7 +99,7 @@ class Bin_importer : public Assimp::BaseImporter {
       copy_xyz(read_vec3(), mesh->mVertices[i]);
       copy_xyz(read_vec3(), mesh->mNormals[i]);
     }
-
+    set_progress(2);
     auto indices_count = read_number() / sizeof(uint32_t);
     mesh->mNumFaces = indices_count / 3;
     mesh->mFaces = new aiFace[mesh->mNumFaces];
@@ -110,6 +111,7 @@ class Bin_importer : public Assimp::BaseImporter {
         face.mIndices[j] = read_uint32();
       }
     }
+    set_progress(3);
   }
 
   const aiImporterDesc *GetInfo() const override {
@@ -118,5 +120,12 @@ class Bin_importer : public Assimp::BaseImporter {
     desc->mFileExtensions = "plain3dv2";
 
     return desc;
+  }
+  private:
+  void set_progress(int current){
+    if(m_progress){
+        constexpr int total = 3;
+        m_progress->UpdateFileRead(current,total);
+    }
   }
 };
