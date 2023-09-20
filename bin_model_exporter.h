@@ -21,11 +21,11 @@ inline bool bin_model_exporter(Mesh_pnu_format &mesh,
     file.write(reinterpret_cast<const char *>(&v), sizeof(glm::vec3) * 2);
   };
 
-  write_number(mesh.vertices.size());
+  write_number(mesh.vertices.size() * sizeof(glm::vec3) * 2);
   for (auto &v : mesh.vertices) {
     write_vertex(v);
   }
-  write_number(mesh.indices.size());
+  write_number(mesh.indices.size() * sizeof(uint32_t));
   for (auto i : mesh.indices) {
     write_number(i);
   }
