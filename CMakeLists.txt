@@ -3,7 +3,9 @@ project(main VERSION 0.1.0)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 20)
-
+# set(ASAN -fsanitize=address -fsanitize-address-use-after-scope -fsanitize=undefined)
+add_compile_options(${ASAN})
+add_link_options(${ASAN})
 add_executable(main main.cpp)
 
 find_package(fmt CONFIG REQUIRED)
