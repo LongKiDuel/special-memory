@@ -24,7 +24,7 @@ struct Mesh_pnu_format {
         v.uv = plain_buffers.uv[i];
       }
       vertices.push_back(v);
-      indices.push_back(i);
+      indices.push_back(vertices.size()-1);
     }
   }
 
