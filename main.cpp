@@ -27,20 +27,23 @@ int main() {
       }
       return content;
     }();
-    ImGuiTableFlags flag = ImGuiTableFlags_Borders | ImGuiTableFlags_Resizable |
+    ImGuiTableFlags flag = ImGuiTableFlags_Borders |
                            ImGuiTableFlags_Reorderable |
-                           ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY | ImGuiTableFlags_SizingStretchProp;
+                           ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY |
+                           ImGuiTableFlags_SizingStretchProp;
     const int table_width = 1000;
-    ImGui::BeginTable("const char *str_id", content[0].size() + 1, flag,ImVec2(table_width,500));
+    ImGui::BeginTable("const char *str_id", content[0].size() + 1, flag,
+                      ImVec2(table_width, 500));
     ImGui::TableSetupScrollFreeze(1, 1);
     int id{};
     for (int i = 0; i < content[0].size() + 1; i++) {
       if (i == 0) {
-        ImGui::TableSetupColumn("", ImGuiTableColumnFlags_NoHide);
+        ImGui::TableSetupColumn(
+            "", ImGuiTableColumnFlags_NoHide | ImGuiTableColumnFlags_WidthFixed,
+            25);
       } else {
-        ImGui::TableSetupColumn(std::string(1, 'a' + i - 1).c_str()
-        // ,ImGuiTableColumnFlags_WidthStretch
-        );
+        ImGui::TableSetupColumn(std::string(1, 'a' + i - 1).c_str(),
+                                ImGuiTableColumnFlags_WidthFixed, 50);
       }
     }
     auto total_col = content[0].size() + 1;
