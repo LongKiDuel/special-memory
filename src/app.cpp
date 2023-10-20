@@ -1,5 +1,7 @@
+#include "imguix/vulkan_app.h"
 #include <imguix/app.h>
 #include <imguix/window.h>
+#include <memory>
 void ImGuiX::App::draw() {
   for (auto &w : windows) {
     w->run();
@@ -23,3 +25,9 @@ void ImGuiX::App::add_window(std::shared_ptr<Window> window) {
 void ImGuiX::App::remove_window(std::shared_ptr<Window> window) {
   std::erase(windows, window);
 }
+namespace ImGuiX {
+
+std::shared_ptr<App> create_vulkan_app() {
+  return std::make_shared<Vulkan_app>();
+}
+} // namespace ImGuiX

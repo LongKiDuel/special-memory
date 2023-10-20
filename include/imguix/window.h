@@ -5,6 +5,8 @@ namespace ImGuiX {
 
 class Window {
 public:
+  Window(std::string title) : title_(title) {}
+  virtual ~Window() = default;
   virtual bool window_begin();
   virtual void window_end();
   virtual void draw_content();
@@ -16,4 +18,4 @@ public:
 private:
   std::string title_;
 };
-}
+} // namespace ImGuiX

@@ -22,4 +22,6 @@ public:
 private:
   std::vector<std::shared_ptr<Window>> windows;
 };
+
+std::shared_ptr<App> create_vulkan_app();
 } // namespace ImGuiX
