@@ -28,14 +28,19 @@ int main() {
       return content;
     }();
     ImGuiTableFlags flag = ImGuiTableFlags_Borders | ImGuiTableFlags_Resizable |
-                           ImGuiTableFlags_Reorderable;
-    ImGui::BeginTable("const char *str_id", content[0].size() + 1, flag);
+                           ImGuiTableFlags_Reorderable |
+                           ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY | ImGuiTableFlags_SizingStretchProp;
+    const int table_width = 1000;
+    ImGui::BeginTable("const char *str_id", content[0].size() + 1, flag,ImVec2(table_width,500));
+    ImGui::TableSetupScrollFreeze(1, 1);
     int id{};
     for (int i = 0; i < content[0].size() + 1; i++) {
       if (i == 0) {
-        ImGui::TableSetupColumn("");
+        ImGui::TableSetupColumn("", ImGuiTableColumnFlags_NoHide);
       } else {
-        ImGui::TableSetupColumn(std::string(1, 'a' + i - 1).c_str());
+        ImGui::TableSetupColumn(std::string(1, 'a' + i - 1).c_str()
+        // ,ImGuiTableColumnFlags_WidthStretch
+        );
       }
     }
     auto total_col = content[0].size() + 1;
