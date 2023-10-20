@@ -7,10 +7,7 @@
         "gtest",
         "benchmark",
         {
-            "name":"drogon",
-            "features":[
-                "postgres"
-            ]
+            "name":"drogon"           
         }
     ]
 }
