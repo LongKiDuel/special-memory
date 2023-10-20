@@ -5,6 +5,13 @@
     "dependencies": [
         "fmt",
         "gtest",
-        "benchmark"
+        "benchmark",
+        "vulkan",
+        {
+            "name":"imgui",
+            "features": [
+                "glfw-binding", "vulkan-binding"
+            ]
+        }
     ]
 }

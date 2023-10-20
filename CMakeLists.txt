@@ -8,6 +8,10 @@ add_executable(main main.cpp)
 
 find_package(fmt CONFIG REQUIRED)
 target_link_libraries(main PRIVATE fmt::fmt)
+find_package(imgui CONFIG REQUIRED)
+target_link_libraries(main PRIVATE imgui::imgui)
+find_package(Vulkan REQUIRED)
+target_link_libraries(main PRIVATE Vulkan::Vulkan)
 
 enable_testing()
 add_subdirectory(test)
