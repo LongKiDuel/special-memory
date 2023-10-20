@@ -17,10 +17,11 @@ int main() {
 
   auto call = []() {
     static std::vector<std::vector<int>> content = [] {
+      const int si = 25;
       std::vector<std::vector<int>> content;
-      for (int i = 0; i < 5; i++) {
+      for (int i = 0; i < si; i++) {
         content.push_back({});
-        for (int j = 0; j < 5; j++) {
+        for (int j = 0; j < si; j++) {
           content.back().push_back(i * i + j);
         }
       }
@@ -36,12 +37,18 @@ int main() {
       } else {
         ImGui::TableSetupColumn(std::string(1, 'a' + i - 1).c_str());
       }
-      ImGui::NextColumn();
     }
+    auto total_col = content[0].size() + 1;
     ImGui::TableHeadersRow();
     int rowID{};
     for (auto &row : content) {
       ImGui::TableNextRow();
+      if (rowID == 0) {
+        for (int i = 0; i < total_col; i++) {
+          ImGui::TableSetColumnIndex(i);
+          ImGui::PushItemWidth(-FLT_MIN); // Right-aligned
+        }
+      }
       ImGui::TableNextColumn();
       ImGui::Text("%s", std::to_string(rowID + 1).c_str());
       for (auto &c : row) {
