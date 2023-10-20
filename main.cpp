@@ -27,6 +27,7 @@ int main() {
       }
       return content;
     }();
+        ImGui::TableNextColumn();
     ImGuiTableFlags flag = ImGuiTableFlags_Borders |
                            ImGuiTableFlags_Reorderable |
                            ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY |
@@ -60,11 +61,11 @@ int main() {
       ImGui::TableNextColumn();
       ImGui::Text("%s", std::to_string(rowID + 1).c_str());
       for (auto &c : row) {
-        ImGui::PushID(++id);
-        ImGui::TableNextColumn();
-
-        ImGui::DragInt("", &c);
-        ImGui::PopID();
+        if (ImGui::TableNextColumn()) {
+          ImGui::PushID(++id);
+          ImGui::DragInt("", &c);
+          ImGui::PopID();
+        }
       }
       rowID++;
     }
