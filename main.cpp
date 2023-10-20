@@ -1,3 +1,5 @@
+#include "include/imguix/app.h"
 int main(){
-  return 0;
+  ImGuiX::App app;
+  app.run();
 }
