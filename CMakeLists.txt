@@ -4,14 +4,24 @@ project(main VERSION 0.1.0)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 20)
 
+find_package(imgui CONFIG REQUIRED)
+
+
+add_library(imguix)
+
+# Fix it
+target_include_directories(imguix PUBLIC include)
+target_sources(imguix PRIVATE src/app.cpp src/window.cpp)
+target_link_libraries(imguix PRIVATE imgui::imgui)
+
 add_executable(main main.cpp)
 
 find_package(fmt CONFIG REQUIRED)
-target_link_libraries(main PRIVATE fmt::fmt)
-find_package(imgui CONFIG REQUIRED)
-target_link_libraries(main PRIVATE imgui::imgui)
 find_package(Vulkan REQUIRED)
+
+target_link_libraries(main PRIVATE fmt::fmt)
 target_link_libraries(main PRIVATE Vulkan::Vulkan)
+target_link_libraries(main PRIVATE imgui::imgui)
 
 enable_testing()
 add_subdirectory(test)
