@@ -150,9 +150,8 @@ void paint() {
       draw_line(min_position.x, max_postion.x, min_position.y + y,
                 min_position.y + y);
     }
-    ImVec2 mouse_grid_id = {
-        std::floor(mouse_position_in_canvas.x / grid_size),
-        std::floor(mouse_position_in_canvas.y / grid_size)};
+    ImVec2 mouse_grid_id = {std::floor(mouse_position_in_canvas.x / grid_size),
+                            std::floor(mouse_position_in_canvas.y / grid_size)};
     auto grid_id_to_canvas = [&](ImVec2 grid_id) {
       return ImVec2{grid_id.x * grid_size, grid_id.y * grid_size};
     };
@@ -162,8 +161,20 @@ void paint() {
     auto grid_to_screen = [&](ImVec2 grid_id) {
       return canvas_pos_to_screen(grid_id_to_canvas(grid_id));
     };
-    draw_list->AddRectFilled(grid_to_screen(mouse_grid_id),
-                             grid_to_screen(mouse_grid_id + ImVec2{1, 1}), -1);
+    static std::vector<ImVec2> grid_to_fill;
+    [&] {
+      for (const auto &g : grid_to_fill) {
+        if (g.x == mouse_grid_id.x && g.y == mouse_grid_id.y) {
+          return;
+        }
+      }
+      grid_to_fill.push_back(mouse_grid_id);
+    }();
+
+    for (auto gid : grid_to_fill) {
+      draw_list->AddRectFilled(grid_to_screen(gid),
+                               grid_to_screen(gid + ImVec2{1, 1}), -1);
+    }
   }
 
   draw_list->PopClipRect();
