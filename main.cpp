@@ -138,6 +138,11 @@ void paint() {
 
     ImVec2 get_paint_center() const { return canvas_offset_; }
 
+    ImVec2 get_mouse_pos_in_normalized() {
+      auto &io = ImGui::GetIO();
+      return screen_position_normalize(io.MousePos);
+    }
+
     void begin_frame() {
       canvas_size_in_screen_ = ImGui::GetContentRegionAvail();
       canvas_offset_in_screen_ = ImGui::GetCursorScreenPos();
@@ -192,54 +197,51 @@ void paint() {
     context.canvas_offset_.x += io.MouseDelta.x;
     context.canvas_offset_.y += io.MouseDelta.y;
   }
+  if (is_hover && io.MouseWheel) {
+    if (io.MouseWheel < 0) {
+      context.scale_factor_ *= 0.9;
+    } else {
+      context.scale_factor_ *= 1.1;
+    }
+  }
 
   draw_list->PushClipRect(min_position, max_postion, true);
 
   if (context.draw_grid_) {
-    const auto grid_size = context.grid_size_ * context.scale_factor_;
+    const int pixel_width = 3840;
+    const int pixel_height = 2096;
+    const auto grid_size = context.grid_size_;
     const auto grid_color = IM_COL32(150, 150, 150, 100);
 
     auto draw_line = [&](float x1, float x2, float y1, float y2) {
       draw_list->AddLine(ImVec2{x1, y1}, ImVec2(x2, y2), grid_color);
-      if (y1 == y2) {
-        auto canvas_y = y1 - min_position.y;
-        auto mouse_pos = io.MousePos;
-        auto mouse_in_canvas = mouse_pos - min_position;
-        auto mouse_in_canvas_world = mouse_position_in_canvas;
-
-        auto str = "Screen pos: " + std::to_string(y1) +
-                   " canvas position: " + std::to_string(canvas_y) + " abs: " +
-                   std::to_string(canvas_y - context.canvas_offset_.y);
-
-        auto append_text = [&](std::string name, ImVec2 vec) {
-          str += " " + name + "(" + std::to_string(vec.x) + ", " +
-                 std::to_string(vec.y) + ")";
-        };
-
-        // append_text("mouse in cavnas", mouse_in_canvas);
-        // append_text("mouse in cavnas world", mouse_in_canvas_world);
-
-        draw_list->AddText(ImVec2(x1, y1), -1, str.c_str());
-      }
     };
+    auto origin = context.normalized_position_to_screen(
+        context.world_position_normalize(ImVec2{}));
 
-    for (auto x = std::fmod(context.canvas_offset_.x, grid_size); x < size.x;
-         x += grid_size) {
-      draw_line(min_position.x + x, min_position.x + x, min_position.y,
-                max_postion.y);
+    for (int i = 0; i * grid_size <= pixel_width; i++) {
+      auto px = i * grid_size;
+      auto v = context.normalized_position_to_screen(
+          context.world_position_normalize(ImVec2{float(px), pixel_height}));
+      draw_line(v.x, v.x, origin.y, v.y);
     }
-    for (auto y = std::fmod(context.canvas_offset_.y, grid_size); y < size.y;
-         y += grid_size) {
-      draw_line(min_position.x, max_postion.x, min_position.y + y,
-                min_position.y + y);
+    for (int i = 0; i * grid_size <= pixel_height; i++) {
+      auto py = i * grid_size;
+      auto v = context.normalized_position_to_screen(
+          context.world_position_normalize(ImVec2{pixel_width, py}));
+      draw_line(origin.x, v.x, v.y, v.y);
     }
-    ImVec2 mouse_grid_id = {std::floor(mouse_position_in_canvas.x / grid_size),
-                            std::floor(mouse_position_in_canvas.y / grid_size)};
+
+    ImVec2 mouse_in_world = context.world_position_de_normalize(
+        context.get_mouse_pos_in_normalized());
+    ImVec2 mouse_grid_id = ImVec2{std::floor(mouse_in_world.x / grid_size),
+                                  std::floor(mouse_in_world.y / grid_size)};
     auto grid_id_to_canvas = [&](ImVec2 grid_id) {
       return ImVec2{grid_id.x * grid_size, grid_id.y * grid_size};
     };
     auto canvas_pos_to_screen = [&](ImVec2 canvas_position) {
-      return ImVec2{canvas_position + origin};
+      return context.normalized_position_to_screen(
+          context.world_position_normalize(canvas_position));
     };
     auto grid_to_screen = [&](ImVec2 grid_id) {
       return canvas_pos_to_screen(grid_id_to_canvas(grid_id));
