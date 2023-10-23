@@ -1,3 +1,4 @@
+#include <optional>
 #define IMGUI_DEFINE_MATH_OPERATORS
 ///
 #include "imguix/window.h"
@@ -174,6 +175,55 @@ void paint() {
   const ImVec2 min_position = context.get_scanvas_min_position();
   const ImVec2 max_postion = context.get_canvas_max_position();
 
+  class Click_rect {
+    ImVec2 begin_{};
+    ImVec2 end_{};
+    enum State { ready, working, done };
+    State state_{ready};
+
+  public:
+    void update(bool actived, std::function<ImVec2()> pos_provider) {
+      const auto &io = ImGui::GetIO();
+      if (state_ == done) {
+        return;
+      }
+
+      if (state_ == working) {
+        if (!ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
+          end_ = pos_provider();
+          state_ = done;
+        } else {
+          end_ = pos_provider();
+        }
+        return;
+      }
+      if (!actived) {
+        return;
+      }
+      if (state_ == ready) {
+        if (ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
+          begin_ = pos_provider();
+          end_ = pos_provider();
+          state_ = working;
+        }
+        return;
+      }
+    }
+    struct Result {
+      ImVec2 min_pos;
+      ImVec2 max_pos;
+    };
+    std::optional<Result> get_result() {
+      if (state_ == ready) {
+        return {};
+      }
+      return Result{begin_, end_};
+    }
+    void reset() { state_ = ready; }
+    bool has_done() const { return state_ == done; }
+  };
+  static Click_rect rect{};
+
   auto draw_list = ImGui::GetWindowDrawList();
   draw_list->AddRectFilled(min_position, max_postion,
                            IM_COL32(50, 50, 50, 255));
@@ -262,6 +312,22 @@ void paint() {
     }
     draw_list->AddCircleFilled(canvas_pos_to_screen(mouse_position_in_canvas),
                                10, IM_COL32(0, 0, 0, 255));
+    rect.update(is_active, [&]() { return mouse_grid_id; });
+    static std::optional<Click_rect::Result> prev_result;
+    {
+      auto result = rect.get_result();
+      if (result) {
+        prev_result = result;
+      }
+      if (rect.has_done()) {
+        rect.reset();
+      }
+      if (prev_result) {
+        draw_list->AddRect(grid_to_screen(prev_result->min_pos),
+                           grid_to_screen(prev_result->max_pos),
+                           IM_COL32(255, 0, 0, 255), 0, 0, 5);
+      }
+    }
     draw_list->AddCircleFilled(
         context.paint_position_to_screen(context.get_paint_center()), 10,
         IM_COL32(255, 0, 0, 255));
