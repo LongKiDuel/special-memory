@@ -175,6 +175,7 @@ void paint() {
       draw_list->AddRectFilled(grid_to_screen(gid),
                                grid_to_screen(gid + ImVec2{1, 1}), -1);
     }
+    draw_list->AddCircleFilled(canvas_pos_to_screen(mouse_position_in_canvas), 10, IM_COL32(0, 0, 0, 255));
   }
 
   draw_list->PopClipRect();
