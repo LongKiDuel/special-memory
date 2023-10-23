@@ -1,3 +1,5 @@
+#define IMGUI_DEFINE_MATH_OPERATORS
+///
 #include "imguix/window.h"
 #include "include/imguix/app.h"
 #include <cmath>
@@ -97,7 +99,7 @@ void paint() {
   const bool is_active = ImGui::IsItemActive();
 
   const ImVec2 origin{min_position.x + context.canvas_offset_.x,
-                      min_position.x + context.canvas_offset_.y};
+                      min_position.y + context.canvas_offset_.y};
 
   const auto &io = ImGui::GetIO();
   const ImVec2 mouse_position_in_canvas{io.MousePos.x - origin.x,
@@ -118,8 +120,22 @@ void paint() {
       draw_list->AddLine(ImVec2{x1, y1}, ImVec2(x2, y2), grid_color);
       if (y1 == y2) {
         auto canvas_y = y1 - min_position.y;
-        auto str = "Screen pos: "+ std::to_string(y1)+ " canvas position: " + std::to_string(canvas_y) + " abs: " +
+        auto mouse_pos = io.MousePos;
+        auto mouse_in_canvas = mouse_pos - min_position;
+        auto mouse_in_canvas_world = mouse_position_in_canvas;
+
+        auto str = "Screen pos: " + std::to_string(y1) +
+                   " canvas position: " + std::to_string(canvas_y) + " abs: " +
                    std::to_string(canvas_y - context.canvas_offset_.y);
+
+        auto append_text = [&](std::string name, ImVec2 vec) {
+          str += " " + name + "(" + std::to_string(vec.x) + ", " +
+                 std::to_string(vec.y) + ")";
+        };
+
+        append_text("mouse in cavnas", mouse_in_canvas);
+        append_text("mouse in cavnas world", mouse_in_canvas_world);
+
         draw_list->AddText(ImVec2(x1, y1), -1, str.c_str());
       }
     };
@@ -134,6 +150,20 @@ void paint() {
       draw_line(min_position.x, max_postion.x, min_position.y + y,
                 min_position.y + y);
     }
+    ImVec2 mouse_grid_id = {
+        std::floor(mouse_position_in_canvas.x / grid_size),
+        std::floor(mouse_position_in_canvas.y / grid_size)};
+    auto grid_id_to_canvas = [&](ImVec2 grid_id) {
+      return ImVec2{grid_id.x * grid_size, grid_id.y * grid_size};
+    };
+    auto canvas_pos_to_screen = [&](ImVec2 canvas_position) {
+      return ImVec2{canvas_position + origin};
+    };
+    auto grid_to_screen = [&](ImVec2 grid_id) {
+      return canvas_pos_to_screen(grid_id_to_canvas(grid_id));
+    };
+    draw_list->AddRectFilled(grid_to_screen(mouse_grid_id),
+                             grid_to_screen(mouse_grid_id + ImVec2{1, 1}), -1);
   }
 
   draw_list->PopClipRect();
