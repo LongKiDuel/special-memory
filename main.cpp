@@ -210,8 +210,16 @@ void paint() {
       }
     }
     struct Result {
-      ImVec2 min_pos;
-      ImVec2 max_pos;
+      ImVec2 begin_pos_;
+      ImVec2 end_pos_;
+      ImVec2 min() {
+        return {std::min(begin_pos_.x, end_pos_.x),
+                std::min(begin_pos_.y, end_pos_.y)};
+      }
+      ImVec2 max() {
+        return {std::max(begin_pos_.x, end_pos_.x),
+                std::max(begin_pos_.y, end_pos_.y)};
+      }
     };
     std::optional<Result> get_result() {
       if (state_ == ready) {
@@ -321,10 +329,18 @@ void paint() {
       }
       if (rect.has_done()) {
         rect.reset();
+        auto min = prev_result->min();
+        auto max = prev_result->max();
+
+        for (int y = min.y; y < max.y; y++) {
+          for (int x = min.x; x < max.x; x++) {
+            grid_to_fill.push_back(ImVec2(x, y));
+          }
+        }
       }
       if (prev_result) {
-        draw_list->AddRect(grid_to_screen(prev_result->min_pos),
-                           grid_to_screen(prev_result->max_pos),
+        draw_list->AddRect(grid_to_screen(prev_result->begin_pos_),
+                           grid_to_screen(prev_result->end_pos_),
                            IM_COL32(255, 0, 0, 255), 0, 0, 5);
       }
     }
