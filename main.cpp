@@ -292,14 +292,16 @@ void paint() {
       return canvas_pos_to_screen(grid_id_to_canvas(grid_id));
     };
     static std::vector<ImVec2> grid_to_fill;
-    [&] {
-      for (const auto &g : grid_to_fill) {
-        if (g.x == mouse_grid_id.x && g.y == mouse_grid_id.y) {
-          return;
+    if (is_active && ImGui::IsMouseDown(ImGuiMouseButton_Right)) {
+      [&] {
+        for (const auto &g : grid_to_fill) {
+          if (g.x == mouse_grid_id.x && g.y == mouse_grid_id.y) {
+            return;
+          }
         }
-      }
-      grid_to_fill.push_back(mouse_grid_id);
-    }();
+        grid_to_fill.push_back(mouse_grid_id);
+      }();
+    }
 
     for (auto gid : grid_to_fill) {
       draw_list->AddRectFilled(grid_to_screen(gid),
