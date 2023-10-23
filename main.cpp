@@ -277,19 +277,6 @@ void paint() {
     auto origin = context.normalized_position_to_screen(
         context.world_position_normalize(ImVec2{}));
 
-    for (int i = 0; i * grid_size <= pixel_width; i++) {
-      auto px = i * grid_size;
-      auto v = context.normalized_position_to_screen(
-          context.world_position_normalize(ImVec2{float(px), pixel_height}));
-      draw_line(v.x, v.x, origin.y, v.y);
-    }
-    for (int i = 0; i * grid_size <= pixel_height; i++) {
-      auto py = i * grid_size;
-      auto v = context.normalized_position_to_screen(
-          context.world_position_normalize(ImVec2{pixel_width, py}));
-      draw_line(origin.x, v.x, v.y, v.y);
-    }
-
     ImVec2 mouse_in_world = context.world_position_de_normalize(
         context.get_mouse_pos_in_normalized());
     ImVec2 mouse_grid_id = ImVec2{std::floor(mouse_in_world.x / grid_size),
@@ -320,6 +307,19 @@ void paint() {
     }
     draw_list->AddCircleFilled(canvas_pos_to_screen(mouse_position_in_canvas),
                                10, IM_COL32(0, 0, 0, 255));
+
+    for (int i = 0; i * grid_size <= pixel_width; i++) {
+      auto px = i * grid_size;
+      auto v = context.normalized_position_to_screen(
+          context.world_position_normalize(ImVec2{float(px), pixel_height}));
+      draw_line(v.x, v.x, origin.y, v.y);
+    }
+    for (int i = 0; i * grid_size <= pixel_height; i++) {
+      auto py = i * grid_size;
+      auto v = context.normalized_position_to_screen(
+          context.world_position_normalize(ImVec2{pixel_width, py}));
+      draw_line(origin.x, v.x, v.y, v.y);
+    }
     rect.update(is_active, [&]() { return mouse_grid_id; });
     static std::optional<Click_rect::Result> prev_result;
     {
