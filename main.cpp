@@ -116,6 +116,12 @@ void paint() {
 
     auto draw_line = [&](float x1, float x2, float y1, float y2) {
       draw_list->AddLine(ImVec2{x1, y1}, ImVec2(x2, y2), grid_color);
+      if (y1 == y2) {
+        auto canvas_y = y1 - min_position.y;
+        auto str = "Screen pos: "+ std::to_string(y1)+ " canvas position: " + std::to_string(canvas_y) + " abs: " +
+                   std::to_string(canvas_y - context.canvas_offset_.y);
+        draw_list->AddText(ImVec2(x1, y1), -1, str.c_str());
+      }
     };
 
     for (auto x = std::fmod(context.canvas_offset_.x, grid_size); x < size.x;
