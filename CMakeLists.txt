@@ -14,6 +14,10 @@ add_subdirectory(test)
 
 add_subdirectory(benchmark)
 
+add_executable(j j.cpp)
+find_package(nlohmann_json CONFIG REQUIRED)
+target_link_libraries(j PRIVATE nlohmann_json::nlohmann_json)
+
 install(TARGETS main DESTINATION bin)
 # install(TARGETS $<TARGET_RUNTIME_DLLS:main> DESTINATION bin)
 
