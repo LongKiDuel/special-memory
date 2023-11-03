@@ -36,23 +36,6 @@ void send_broadcast(asio::io_context &io_context) {
       });
 }
 
-// void listen_for_responses(asio::io_context& io_context) {
-//     asio::ip::udp::socket socket(io_context,
-//     asio::ip::udp::endpoint(asio::ip::udp::v4(), 8888)); std::array<char,
-//     1024> recv_buffer; asio::ip::udp::endpoint sender_endpoint;
-
-//     socket.async_receive_from(
-//         asio::buffer(recv_buffer), sender_endpoint,
-//         [&](std::error_code ec, std::size_t bytes_recvd) {
-//             if (!ec && bytes_recvd > 0) {
-//                 std::cout << "Received response from: " << sender_endpoint <<
-//                 "\n"; std::cout << "Message: " <<
-//                 std::string(recv_buffer.data(), bytes_recvd) << "\n";
-//             }
-//             // Could set up another async receive here for continuous
-//             listening
-//         });
-// }
 void listen_for_responses(asio::io_context &io_context) {
   static asio::ip::udp::socket socket(
       io_context, asio::ip::udp::endpoint(asio::ip::udp::v4(), 8888));
