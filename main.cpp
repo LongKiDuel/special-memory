@@ -1,10 +1,14 @@
 #include <asio.hpp>
+#include <asio/io_context.hpp>
 #include <asio/registered_buffer.hpp>
 #include <asio/socket_base.hpp>
+#include <asio/steady_timer.hpp>
+#include <chrono>
 #include <functional>
 #include <iostream>
 #include <memory>
 #include <string>
+#include <system_error>
 auto &getSocket(asio::io_context &io_context) {
   static asio::ip::udp::socket socket(
       io_context, asio::ip::udp::endpoint(asio::ip::udp::v4(), 12312));
@@ -23,12 +27,31 @@ void send_broadcast(asio::io_context &io_context) {
   // lifetime.
   static auto receive_buffer = std::make_shared<std::vector<char>>(1024);
 
-  socket.async_send_to(asio::buffer(message), receiver_endpoint,
-                       [&](std::error_code ec, std::size_t /*bytes_sent*/) {
-                         if (ec) {
-                           std::cerr << ec.message() << "\n";
-                         }
-                       });
+  static asio::steady_timer timer{io_context, std::chrono::seconds{1}};
+
+  timer.expires_at(timer.expires_at() + std::chrono::seconds{1});
+  auto send_call = [message] {
+    socket.async_send_to(asio::buffer(message), receiver_endpoint,
+                         [&](std::error_code ec, std::size_t /*bytes_sent*/) {
+                           if (ec) {
+                             std::cerr << ec.message() << "\n";
+                           }
+                         });
+  };
+  send_call();
+  struct Tick {
+    asio::io_context &context_;
+    std::function<void()> call_;
+    asio::steady_timer &timer_;
+
+    void operator()(std::error_code ec) {
+      timer.expires_at(timer.expires_at() + std::chrono::seconds{1});
+      timer_.async_wait(*this);
+      call_();
+    }
+  };
+  static Tick tick{io_context, send_call, timer};
+  timer.async_wait(tick);
 }
 
 void recive_broadcast_echo(asio::io_context &io_context) {
