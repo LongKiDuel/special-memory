@@ -8,11 +8,11 @@ add_executable(main main.cpp)
 
 find_package(fmt CONFIG REQUIRED)
 target_link_libraries(main PRIVATE fmt::fmt)
+find_package(asio CONFIG REQUIRED)
+target_link_libraries(main PRIVATE asio::asio)
 
 enable_testing()
 add_subdirectory(test)
-
-add_subdirectory(benchmark)
 
 install(TARGETS main DESTINATION bin)
 # install(TARGETS $<TARGET_RUNTIME_DLLS:main> DESTINATION bin)

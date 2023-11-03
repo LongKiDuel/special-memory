@@ -5,6 +5,6 @@
     "dependencies": [
         "fmt",
         "gtest",
-        "benchmark"
+        "asio"
     ]
 }
