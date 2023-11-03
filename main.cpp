@@ -27,9 +27,6 @@ void send_broadcast(asio::io_context &io_context) {
   // lifetime.
   static auto receive_buffer = std::make_shared<std::vector<char>>(1024);
 
-  static asio::steady_timer timer{io_context, std::chrono::seconds{1}};
-
-  timer.expires_at(timer.expires_at() + std::chrono::seconds{1});
   auto send_call = [message] {
     socket.async_send_to(asio::buffer(message), receiver_endpoint,
                          [&](std::error_code ec, std::size_t /*bytes_sent*/) {
@@ -38,20 +35,23 @@ void send_broadcast(asio::io_context &io_context) {
                            }
                          });
   };
-  send_call();
+
   struct Tick {
     asio::io_context &context_;
     std::function<void()> call_;
-    asio::steady_timer &timer_;
+    std::chrono::milliseconds time_intervalue_;
+    // asio::steady_timer timer_{context_, time_intervalue_};
+    std::shared_ptr<asio::steady_timer> timer_ =
+        std::make_unique<asio::steady_timer>(context_, time_intervalue_);
 
     void operator()(std::error_code ec) {
-      timer.expires_at(timer.expires_at() + std::chrono::seconds{1});
-      timer_.async_wait(*this);
+      timer_->expires_at(timer_->expires_at() + time_intervalue_);
       call_();
+      timer_->async_wait(*this);
     }
   };
-  static Tick tick{io_context, send_call, timer};
-  timer.async_wait(tick);
+  static Tick tick{io_context, send_call, std::chrono::seconds{1}};
+  tick({});
 }
 
 void recive_broadcast_echo(asio::io_context &io_context) {
