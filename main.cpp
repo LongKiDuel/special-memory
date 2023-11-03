@@ -1,8 +1,13 @@
 #include <asio.hpp>
+#include <asio/awaitable.hpp>
+#include <asio/co_spawn.hpp>
+#include <asio/detached.hpp>
 #include <asio/io_context.hpp>
+#include <asio/ip/udp.hpp>
 #include <asio/registered_buffer.hpp>
 #include <asio/socket_base.hpp>
 #include <asio/steady_timer.hpp>
+#include <asio/use_awaitable.hpp>
 #include <chrono>
 #include <functional>
 #include <iostream>
@@ -53,7 +58,23 @@ void send_broadcast(asio::io_context &io_context) {
   static Tick tick{io_context, send_call, std::chrono::seconds{1}};
   tick({});
 }
-
+asio::awaitable<void> recive_boardcast_responce(asio::io_context &io_context,
+                                                asio::ip::udp::socket &socket) {
+  asio::ip::udp::endpoint receiver_endpoint(asio::ip::address_v4::any(), 8888);
+  auto receive_buffer = std::vector<char>(1024);
+  while (true) {
+    std::cout << "start reciving coco: \n";
+    auto bytes_recvd = co_await socket.async_receive_from(
+        asio::buffer(receive_buffer), receiver_endpoint, asio::use_awaitable);
+    if (bytes_recvd > 0) {
+      std::cout << "Received response from: " << receiver_endpoint << "\n";
+      std::cout << "Message: "
+                << std::string(receive_buffer.begin(),
+                               receive_buffer.begin() + bytes_recvd)
+                << "\n";
+    }
+  }
+}
 void recive_broadcast_echo(asio::io_context &io_context) {
   static auto &socket = getSocket(io_context);
   static asio::ip::udp::endpoint receiver_endpoint(asio::ip::address_v4::any(),
@@ -118,7 +139,10 @@ int main(int argc, char **argv) {
   signals.async_wait([&](const std::error_code &, int) { io_context.stop(); });
   if (argc > 1) {
     // Send a broadcast message
-    recive_broadcast_echo(io_context);
+    // recive_broadcast_echo(io_context);
+    asio::co_spawn(io_context,
+                   recive_boardcast_responce(io_context, getSocket(io_context)),
+                   asio::detached);
     send_broadcast(io_context);
   } else {
     // Listen for any responses
