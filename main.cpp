@@ -24,8 +24,10 @@ void send_broadcast(asio::io_context &io_context) {
   static auto receive_buffer = std::make_shared<std::vector<char>>(1024);
 
   socket.async_send_to(asio::buffer(message), receiver_endpoint,
-                       [&](std::error_code /*ec*/, std::size_t /*bytes_sent*/) {
-
+                       [&](std::error_code ec, std::size_t /*bytes_sent*/) {
+                         if (ec) {
+                           std::cerr << ec.message() << "\n";
+                         }
                        });
 }
 
