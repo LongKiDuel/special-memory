@@ -31,8 +31,8 @@ void send_broadcast(asio::io_context &io_context) {
 
 void recive_broadcast_echo(asio::io_context &io_context) {
   static auto &socket = getSocket(io_context);
-  static asio::ip::udp::endpoint receiver_endpoint(
-      asio::ip::address_v4::broadcast(), 8888);
+  static asio::ip::udp::endpoint receiver_endpoint(asio::ip::address_v4::any(),
+                                                   8888);
 
   // Prepare a buffer for the incoming message. Use a shared_ptr to manage the
   // lifetime.
