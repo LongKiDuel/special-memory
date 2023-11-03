@@ -75,31 +75,6 @@ asio::awaitable<void> recive_boardcast_responce(asio::io_context &io_context,
     }
   }
 }
-void recive_broadcast_echo(asio::io_context &io_context) {
-  static auto &socket = getSocket(io_context);
-  static asio::ip::udp::endpoint receiver_endpoint(asio::ip::address_v4::any(),
-                                                   8888);
-
-  // Prepare a buffer for the incoming message. Use a shared_ptr to manage the
-  // lifetime.
-
-  auto receive_buffer = std::make_shared<std::vector<char>>(1024);
-
-  auto recive_handle = [receive_buffer, &io_context](const std::error_code &ec,
-                                                     std::size_t bytes_recvd) {
-    if (!ec && bytes_recvd > 0) {
-      std::cout << "Received response from: " << receiver_endpoint << "\n";
-      std::cout << "Message: "
-                << std::string(receive_buffer->begin(),
-                               receive_buffer->begin() + bytes_recvd)
-                << "\n";
-    }
-    recive_broadcast_echo(io_context);
-  };
-  std::cout << "start reciving: \n";
-  socket.async_receive_from(asio::buffer(*receive_buffer), receiver_endpoint,
-                            recive_handle);
-}
 
 void listen_for_responses(asio::io_context &io_context) {
   static asio::ip::udp::socket socket(
@@ -138,11 +113,10 @@ int main(int argc, char **argv) {
   asio::signal_set signals(io_context, SIGINT, SIGTERM);
   signals.async_wait([&](const std::error_code &, int) { io_context.stop(); });
   if (argc > 1) {
-    // Send a broadcast message
-    // recive_broadcast_echo(io_context);
     asio::co_spawn(io_context,
                    recive_boardcast_responce(io_context, getSocket(io_context)),
                    asio::detached);
+    // Send a broadcast message
     send_broadcast(io_context);
   } else {
     // Listen for any responses
