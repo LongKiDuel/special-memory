@@ -186,7 +186,7 @@ int main() {
   std::string buffer;
   handle.set_write_function([&buffer](auto buf, auto size) {
     buffer.append(buf, size);
-    return 0;
+    return size;
   });
 
   handle.set_opt(CURLOPT_NOPROXY, "localhost");
