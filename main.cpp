@@ -150,9 +150,11 @@ private:
   std::unique_ptr<Mime_handle> mime_;
 };
 
+std::string get_curl_version() { return curl_version(); }
 } // namespace curlpp
 
 int main() {
+
   curlpp::Extened_easy_handle handle{};
 
   handle.set_verbose(true);
