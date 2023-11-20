@@ -5,6 +5,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <vector>
 namespace curlpp::function_types {
 using progress_callback = int(void *user_data, curl_off_t download_total,
                               curl_off_t download_current,
@@ -46,7 +47,44 @@ public:
 private:
   CURL *curl_;
 };
+class Mime_handle {
+public:
+  Mime_handle() { mime_ = curl_mime_init(nullptr); }
+  ~Mime_handle() { curl_mime_free(mime_); }
+  Mime_handle(Mime_handle &&rhs) {
+    mime_ = rhs.mime_;
+    rhs.mime_ = curl_mime_init(nullptr);
+  }
+  Mime_handle &operator=(Mime_handle &&rhs) {
+    curl_mime_free(mime_);
+    mime_ = rhs.mime_;
+    rhs.mime_ = curl_mime_init(nullptr);
 
+    return *this;
+  }
+  operator curl_mime *() { return mime_; };
+
+  // key and value will be copied into inner buffer.
+  void add_string(const std::string &key, const std::string &value) {
+    auto part = curl_mime_addpart(mime_);
+
+    curl_mime_name(part, key.c_str());
+    curl_mime_data(part, value.c_str(), value.size());
+  }
+
+  // key, file name and buffer will be copied into inner buffer.
+  void add_file(const std::string &key, const std::string &filename,
+                std::vector<char> buffer) {
+    auto part = curl_mime_addpart(mime_);
+
+    curl_mime_name(part, key.c_str());
+    curl_mime_filename(part, filename.c_str());
+    curl_mime_data(part, buffer.data(), buffer.size());
+  }
+
+private:
+  curl_mime *mime_{};
+};
 class Extened_easy_handle : public Easy_handle {
 public:
   Extened_easy_handle() = default;
@@ -68,6 +106,11 @@ public:
     set_opt(CURLOPT_NOPROGRESS, 0);
   }
 
+  void add_mime(Mime_handle mime) {
+    mime_ = std::make_unique<Mime_handle>(std::move(mime));
+    set_opt(CURLOPT_MIMEPOST, (curl_mime *)(*mime_));
+  }
+
 private:
   static int progress_bar_adoptor(void *body, curl_off_t a, curl_off_t b,
                                   curl_off_t c, curl_off_t d) {
@@ -77,15 +120,26 @@ private:
 
 private:
   std::function<function_types::progress_callback> progress_callback_call_;
+  std::unique_ptr<Mime_handle> mime_;
 };
+
 } // namespace curlpp
 
 int main() {
   curlpp::Extened_easy_handle handle{};
 
   handle.set_verbose(true);
-  handle.set_url("https://www.bing.com");
+  handle.set_url("http://localhost:9812");
   handle.set_progress_bar(curlpp::built_in_functions::cout_progress_bar);
+
+  curlpp::Mime_handle mime;
+  mime.add_string("name", "Bob");
+  mime.add_string("time", "today");
+  mime.add_file("program", "main", {'a', 'c'});
+
+  handle.add_mime(std::move(mime));
+
+  handle.set_opt(CURLOPT_NOPROXY, "localhost");
 
   curl_easy_perform(handle);
 }
