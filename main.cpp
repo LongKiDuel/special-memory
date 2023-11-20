@@ -191,6 +191,11 @@ public:
 
   void perform() { curl_easy_perform(*this); }
 
+  void user_auth(const std::string &name, const std::string &password) {
+    std::string str = name + ":" + password;
+    set_opt(CURLOPT_USERPWD, str.c_str());
+  }
+
 private:
   static int progress_bar_adoptor(void *body, curl_off_t a, curl_off_t b,
                                   curl_off_t c, curl_off_t d) {
@@ -256,6 +261,7 @@ int main() {
   });
 
   handle.set_opt(CURLOPT_NOPROXY, "localhost");
+  handle.user_auth("Bobo", "F1 89sf");
 
   handle.perform();
 
