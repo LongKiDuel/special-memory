@@ -106,7 +106,7 @@ public:
   void set_verbose(bool verbose) {
     long value = verbose;
 
-    set_opt(CURLOPT_VERBOSE, 1L);
+    set_opt(CURLOPT_VERBOSE, value);
   }
 
   void
