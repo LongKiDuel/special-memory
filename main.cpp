@@ -13,7 +13,9 @@ using progress_callback = int(void *user_data, curl_off_t download_total,
                               curl_off_t download_current,
                               curl_off_t upload_total,
                               curl_off_t upload_current);
-}
+
+using write_fucnction = size_t(char *buffer, size_t size);
+} // namespace curlpp::function_types
 namespace curlpp::built_in_functions {
 int cout_progress_bar(void *user_data, curl_off_t download_total,
                       curl_off_t download_current, curl_off_t upload_total,
@@ -116,6 +118,12 @@ public:
     set_opt(CURLOPT_XFERINFODATA, this);
     set_opt(CURLOPT_NOPROGRESS, 0);
   }
+  void set_write_function(
+      std::function<function_types::write_fucnction> write_callback) {
+    write_callback_call_ = std::move(write_callback);
+    set_opt(CURLOPT_WRITEDATA, this);
+    set_opt(CURLOPT_WRITEFUNCTION, write_function_adoptor);
+  }
 
   void add_mime(Mime_handle mime) {
     mime_ = std::make_unique<Mime_handle>(std::move(mime));
@@ -145,8 +153,17 @@ private:
     return self->progress_callback_call_(body, a, b, c, d);
   }
 
+  static int write_function_adoptor(char *ptr, size_t size, size_t nmemb,
+                                    void *userdata) {
+    auto self = reinterpret_cast<Extened_easy_handle *>(userdata);
+    // size is always 1 in the document.
+    assert(size == 1);
+    return self->write_callback_call_(ptr, nmemb);
+  }
+
 private:
   std::function<function_types::progress_callback> progress_callback_call_;
+  std::function<function_types::write_fucnction> write_callback_call_;
   std::unique_ptr<Mime_handle> mime_;
 };
 
@@ -164,11 +181,17 @@ int main() {
   curlpp::Mime_handle mime;
   mime.add_string("name", "Bob");
   mime.add_string("time", "today");
-  mime.add_file("program", "program", "main");
 
   handle.add_mime(std::move(mime));
+  std::string buffer;
+  handle.set_write_function([&buffer](auto buf, auto size) {
+    buffer.append(buf, size);
+    return 0;
+  });
 
   handle.set_opt(CURLOPT_NOPROXY, "localhost");
 
   curl_easy_perform(handle);
+
+  std::cout << buffer << "\n";
 }
