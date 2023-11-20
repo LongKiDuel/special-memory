@@ -100,6 +100,35 @@ public:
 private:
   curl_mime *mime_{};
 };
+
+class Header_list {
+public:
+  Header_list() { list_ = nullptr; }
+  ~Header_list() { curl_slist_free_all(list_); }
+
+  Header_list(Header_list &&rhs) {
+    list_ = rhs.list_;
+    rhs.list_ = nullptr;
+  }
+  Header_list &operator=(Header_list &&rhs) {
+    list_ = rhs.list_;
+    rhs.list_ = {};
+
+    return *this;
+  }
+  operator curl_slist *() { return list_; };
+
+  void add_string(const std::string &str) {
+    list_ = curl_slist_append(list_, str.c_str());
+  }
+  void add(const std::string &name, const std::string &value) {
+    add_string(name + ": " + value);
+  }
+
+private:
+  curl_slist *list_{};
+};
+
 class Extened_easy_handle : public Easy_handle {
 public:
   Extened_easy_handle() = default;
@@ -138,6 +167,10 @@ public:
   void add_mime(Mime_handle mime) {
     mime_ = std::make_unique<Mime_handle>(std::move(mime));
     set_opt(CURLOPT_MIMEPOST, (curl_mime *)(*mime_));
+  }
+  void add_headers(Header_list header_list) {
+    headers_ = std::make_unique<Header_list>(std::move(header_list));
+    set_opt(CURLOPT_HTTPHEADER, static_cast<curl_slist *>(*headers_));
   }
 
   void change_to_post() { set_opt(CURLOPT_POST, 1L); }
@@ -183,6 +216,7 @@ private:
   std::function<function_types::write_fucnction> write_callback_call_;
   std::function<function_types::header_fucnction> header_callback_call_;
   std::unique_ptr<Mime_handle> mime_;
+  std::unique_ptr<Header_list> headers_;
 };
 
 std::string get_curl_version() { return curl_version(); }
@@ -201,6 +235,12 @@ int main() {
   mime.add_string("time", "today");
 
   handle.add_mime(std::move(mime));
+
+  curlpp::Header_list headers;
+
+  headers.add("X-name", "Alice");
+
+  handle.add_headers(std::move(headers));
   std::string buffer;
   handle.set_write_function([&buffer](auto buf, auto size) {
     buffer.append(buf, size);
