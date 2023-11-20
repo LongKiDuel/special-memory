@@ -18,7 +18,7 @@ int cout_progress_bar(void *user_data, curl_off_t download_total,
                       curl_off_t upload_current) {
   (void)user_data;
   auto print = [](auto name, auto value) {
-    std::cout << name << " " << value << "\n";
+    std::cout << name << " " << value << " ";
   };
   print("dl total", download_total);
   print("dl current", download_current);
