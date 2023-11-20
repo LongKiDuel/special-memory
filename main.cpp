@@ -1,3 +1,5 @@
+#include <cassert>
+#include <cstdint>
 #include <curl/curl.h>
 #include <curl/easy.h>
 #include <curl/system.h>
@@ -41,7 +43,7 @@ public:
   ~Easy_handle() { curl_easy_cleanup(curl_); }
   operator CURL *() { return curl_; }
   auto set_opt(CURLoption option, auto value) {
-    curl_easy_setopt(curl_, option, value);
+    return curl_easy_setopt(curl_, option, value);
   }
 
 private:
@@ -118,6 +120,22 @@ public:
   void add_mime(Mime_handle mime) {
     mime_ = std::make_unique<Mime_handle>(std::move(mime));
     set_opt(CURLOPT_MIMEPOST, (curl_mime *)(*mime_));
+  }
+
+  void change_to_post() { set_opt(CURLOPT_POST, 1L); }
+  // proxy all in one
+  void set_proxy(const std::string &proxy) {
+    auto result = set_opt(CURLOPT_PROXY, proxy.c_str());
+    assert(result == CURLE_OK);
+  }
+  // proxy per-part
+  void set_proxy_host(const std::string &host) {
+    set_opt(CURLOPT_PROXY, host.c_str());
+  }
+  void set_proxy_type(curl_proxytype type) { set_opt(CURLOPT_PROXYTYPE, type); }
+  void set_proxy_port(uint16_t port) {
+    long value = port;
+    set_opt(CURLOPT_PROXYPORT, value);HTTP proxies can generally only speak HTTP (for obvious reasons), which makes libcurl convert non-HTTP requests to HTTP when using an HTTP proxy without this tunnel option set. For example, asking for an FTP URL and specif
   }
 
 private:
