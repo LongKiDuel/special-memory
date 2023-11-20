@@ -73,13 +73,22 @@ public:
   }
 
   // key, file name and buffer will be copied into inner buffer.
-  void add_file(const std::string &key, const std::string &filename,
-                std::vector<char> buffer) {
+  void add_file_from_memory(const std::string &key, const std::string &filename,
+                            std::vector<char> buffer) {
     auto part = curl_mime_addpart(mime_);
 
     curl_mime_name(part, key.c_str());
     curl_mime_filename(part, filename.c_str());
     curl_mime_data(part, buffer.data(), buffer.size());
+  }
+
+  void add_file(const std::string &key, const std::string &filename,
+                const std::string &path_for_read_file) {
+    auto part = curl_mime_addpart(mime_);
+
+    curl_mime_name(part, key.c_str());
+    curl_mime_filename(part, filename.c_str());
+    curl_mime_filedata(part, path_for_read_file.c_str());
   }
 
 private:
@@ -135,7 +144,7 @@ int main() {
   curlpp::Mime_handle mime;
   mime.add_string("name", "Bob");
   mime.add_string("time", "today");
-  mime.add_file("program", "main", {'a', 'c'});
+  mime.add_file("program", "program", "main");
 
   handle.add_mime(std::move(mime));
 
