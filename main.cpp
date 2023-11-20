@@ -135,7 +135,7 @@ public:
   void set_proxy_type(curl_proxytype type) { set_opt(CURLOPT_PROXYTYPE, type); }
   void set_proxy_port(uint16_t port) {
     long value = port;
-    set_opt(CURLOPT_PROXYPORT, value);HTTP proxies can generally only speak HTTP (for obvious reasons), which makes libcurl convert non-HTTP requests to HTTP when using an HTTP proxy without this tunnel option set. For example, asking for an FTP URL and specif
+    set_opt(CURLOPT_PROXYPORT, value);
   }
 
 private:
