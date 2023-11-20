@@ -189,6 +189,8 @@ public:
     set_opt(CURLOPT_PROXYPORT, value);
   }
 
+  void perform() { curl_easy_perform(*this); }
+
 private:
   static int progress_bar_adoptor(void *body, curl_off_t a, curl_off_t b,
                                   curl_off_t c, curl_off_t d) {
@@ -255,7 +257,7 @@ int main() {
 
   handle.set_opt(CURLOPT_NOPROXY, "localhost");
 
-  curl_easy_perform(handle);
+  handle.perform();
 
   std::cout << buffer << "\n";
 }
