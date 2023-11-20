@@ -7,6 +7,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <vector>
 namespace curlpp::function_types {
 using progress_callback = int(void *user_data, curl_off_t download_total,
@@ -15,6 +16,7 @@ using progress_callback = int(void *user_data, curl_off_t download_total,
                               curl_off_t upload_current);
 
 using write_fucnction = size_t(char *buffer, size_t size);
+using header_fucnction = size_t(char *buffer, size_t size);
 } // namespace curlpp::function_types
 namespace curlpp::built_in_functions {
 int cout_progress_bar(void *user_data, curl_off_t download_total,
@@ -125,6 +127,14 @@ public:
     set_opt(CURLOPT_WRITEFUNCTION, write_function_adoptor);
   }
 
+  // called per-line before http body.
+  void set_header_function(
+      std::function<function_types::write_fucnction> header_callback) {
+    header_callback_call_ = std::move(header_callback);
+    set_opt(CURLOPT_HEADERDATA, this);
+    set_opt(CURLOPT_HEADERFUNCTION, header_function_adoptor);
+  }
+
   void add_mime(Mime_handle mime) {
     mime_ = std::make_unique<Mime_handle>(std::move(mime));
     set_opt(CURLOPT_MIMEPOST, (curl_mime *)(*mime_));
@@ -160,10 +170,18 @@ private:
     assert(size == 1);
     return self->write_callback_call_(ptr, nmemb);
   }
+  static size_t header_function_adoptor(char *buffer, size_t size,
+                                        size_t nitems, void *userdata) {
+    auto self = reinterpret_cast<Extened_easy_handle *>(userdata);
+    // size is always 1 in the document.
+    assert(size == 1);
+    return self->header_callback_call_(buffer, nitems);
+  }
 
 private:
   std::function<function_types::progress_callback> progress_callback_call_;
   std::function<function_types::write_fucnction> write_callback_call_;
+  std::function<function_types::header_fucnction> header_callback_call_;
   std::unique_ptr<Mime_handle> mime_;
 };
 
@@ -186,6 +204,12 @@ int main() {
   std::string buffer;
   handle.set_write_function([&buffer](auto buf, auto size) {
     buffer.append(buf, size);
+    return size;
+  });
+  handle.set_verbose(false);
+
+  handle.set_header_function([i = 0](auto buf, auto size) mutable {
+    std::cout << i++ << " " << std::string_view(buf, size) << "\n";
     return size;
   });
 
