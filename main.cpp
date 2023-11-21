@@ -368,11 +368,29 @@ void paint() {
 
   draw_list->PopClipRect();
 }
+
+void wrapping_test() {
+  static float box_size = 20;
+  static int box_count = 40;
+  ImGui::DragFloat("Box size", &box_size);
+  ImGui::DragInt("Box count", &box_count);
+
+  for (auto i = 0; i < box_count; i++) {
+    if (ImGui::GetContentRegionAvail().x < box_size && (i != 0)) {
+      ImGui::NewLine();
+    }
+
+    ImGui::Button(std::to_string(i).c_str(), {box_size, box_size});
+    ImGui::GetItemRectSize();
+    ImGui::SameLine();
+  }
+}
 int main() {
   auto app = ImGuiX::create_vulkan_app();
 
   // app->add_window(std::make_shared<Window_slot>("Table", table));
   app->add_window(std::make_shared<Window_slot>("Draw", paint));
+  app->add_window(std::make_shared<Window_slot>("Wrapping", wrapping_test));
 
   app->run();
 }
