@@ -113,6 +113,9 @@ public:
           }
         }
       }
+      if (auto_scroll_ && ImGui::GetScrollY() >= ImGui::GetScrollMaxY()) {
+        ImGui::SetScrollHereY(1.0f);
+      }
     }
     ImGui::EndChild();
 
@@ -126,4 +129,6 @@ private:
   // max align is 64.
   std::string pattern_ = "[%T.%f %L] %-64v [+%6oms]";
   bool only_recent_logs_{};
+
+  bool auto_scroll_{true};
 };
