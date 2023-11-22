@@ -398,6 +398,9 @@ int main() {
     if (ImGui::Button("Send")) {
       SPDLOG_INFO("send log success!");
     }
+    if (ImGui::Button("Send Other")) {
+      SPDLOG_WARN("send 'WHAT' success!");
+    }
   }));
   Imgui_log_window log;
   app->add_window(
