@@ -26,12 +26,6 @@ template <typename Mutex>
 class Imgui_sink : public spdlog::sinks::base_sink<Mutex> {
 protected:
   void sink_it_(const spdlog::details::log_msg &msg) override {
-
-    // log_msg is a struct containing the log entry info like level, timestamp,
-    // thread id etc. msg.raw contains pre formatted log
-
-    // If needed (very likely but not mandatory), the sink formats the message
-    // before sending it to its final destination:
     spdlog::memory_buf_t formatted;
     spdlog::sinks::base_sink<Mutex>::formatter_->format(msg, formatted);
 
@@ -93,30 +87,35 @@ public:
       ImGui::Checkbox("time limit", &only_recent_logs_);
 
       auto current = std::chrono::high_resolution_clock::now();
-      //   ImGui::Text("%s", buffer_->c_str());
-      for (auto &msg : sink_->log_packets_) {
 
-        if (only_recent_logs_) {
-          if (current - msg.time_ > std::chrono::seconds{10}) {
-            continue;
+      if (ImGui::BeginChild("Log")) {
+
+        for (auto &msg : sink_->log_packets_) {
+
+          if (only_recent_logs_) {
+            if (current - msg.time_ > std::chrono::seconds{10}) {
+              continue;
+            }
           }
-        }
 
-        auto &str = msg.text_;
-        if (msg.level_ > SPDLOG_LEVEL_INFO) {
-          ImGui::PushStyleColor(ImGuiCol_Text, ImColor(255, 0, 0).Value);
-        } else {
-          ImGui::PushStyleColor(ImGuiCol_Text, ImColor(0, 255, 0).Value);
-        }
-        ImGui::Text("%s", str.c_str());
-        ImGui::PopStyleColor();
-        if (ImGui::BeginItemTooltip()) {
-          ImGui::Text("thread:%zu", msg.thread_id_);
-          ImGui::Text("position:%s:%d", msg.file_.data(), msg.line_);
-          ImGui::EndTooltip();
+          auto &str = msg.text_;
+          if (msg.level_ > SPDLOG_LEVEL_INFO) {
+            ImGui::PushStyleColor(ImGuiCol_Text, ImColor(255, 0, 0).Value);
+          } else {
+            ImGui::PushStyleColor(ImGuiCol_Text, ImColor(0, 255, 0).Value);
+          }
+          ImGui::Text("%s", str.c_str());
+          ImGui::PopStyleColor();
+          if (ImGui::BeginItemTooltip()) {
+            ImGui::Text("thread:%zu", msg.thread_id_);
+            ImGui::Text("position:%s:%d", msg.file_.data(), msg.line_);
+            ImGui::EndTooltip();
+          }
         }
       }
     }
+    ImGui::EndChild();
+
     ImGui::End();
   }
 
