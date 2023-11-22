@@ -1,12 +1,14 @@
-#include <optional>
 #define IMGUI_DEFINE_MATH_OPERATORS
 ///
+#include "imgui_sink.h"
 #include "imguix/window.h"
 #include "include/imguix/app.h"
 #include <cmath>
 #include <functional>
 #include <imgui.h>
 #include <memory>
+#include <optional>
+#include <spdlog/spdlog.h>
 #include <string>
 #include <vector>
 class Window_slot : public ImGuiX::Window {
@@ -391,6 +393,15 @@ int main() {
   // app->add_window(std::make_shared<Window_slot>("Table", table));
   app->add_window(std::make_shared<Window_slot>("Draw", paint));
   app->add_window(std::make_shared<Window_slot>("Wrapping", wrapping_test));
+
+  app->add_window(std::make_shared<Window_slot>("Tasking", [] {
+    if (ImGui::Button("Send")) {
+      SPDLOG_INFO("send log success!");
+    }
+  }));
+  Imgui_log_window log;
+  app->add_window(
+      std::make_shared<Window_slot>("Logging", [&log] { log.draw(); }));
 
   app->run();
 }
