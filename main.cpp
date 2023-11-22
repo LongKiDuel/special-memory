@@ -394,12 +394,16 @@ int main() {
   app->add_window(std::make_shared<Window_slot>("Draw", paint));
   app->add_window(std::make_shared<Window_slot>("Wrapping", wrapping_test));
 
-  app->add_window(std::make_shared<Window_slot>("Tasking", [] {
+  app->add_window(std::make_shared<Window_slot>("Tasking", [i = 0]() mutable {
     if (ImGui::Button("Send")) {
       SPDLOG_INFO("send log success!");
     }
     if (ImGui::Button("Send Other")) {
       SPDLOG_WARN("send 'WHAT' success!");
+    }
+    if (ImGui::Button("Add")) {
+      i++;
+      SPDLOG_INFO("Add number: {}", i);
     }
   }));
   Imgui_log_window log;
