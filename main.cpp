@@ -94,15 +94,18 @@ public:
       std::cerr << "No OpenCL platforms found." << std::endl;
       return;
     }
+    for (auto plat : platforms_) {
 
-    // Choose the first platform
-    platform_ = platforms_[0];
+      // Choose the first platform
+      platform_ = plat;
 
-    // Get the devices for the chosen platform
-    platform_.getDevices(CL_DEVICE_TYPE_GPU, &devices_);
-    if (devices_.empty()) {
-      std::cerr << "No GPU devices found." << std::endl;
-      return;
+      // Get the devices for the chosen platform
+      platform_.getDevices(CL_DEVICE_TYPE_GPU, &devices_);
+      if (devices_.empty()) {
+        continue;
+      } else {
+        break;
+      }
     }
 
     // Choose the first device
