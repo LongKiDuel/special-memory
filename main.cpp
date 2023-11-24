@@ -59,7 +59,7 @@ namespace image_processing {
 
 // Define your 'My_class' for image processing
 class ImageBlur {
-  const int channels = 4;
+  const int channels = 1;
 
 public:
   // Constructor
@@ -121,6 +121,11 @@ public:
     program_ = cl::Program(context_, sources);
     if (program_.build({device_}) != CL_SUCCESS) {
       std::cerr << "Error building OpenCL program." << std::endl;
+      SPDLOG_ERROR("failed to build code: ");
+      for (auto &[d, i] : program_.getBuildInfo<CL_PROGRAM_BUILD_LOG>()) {
+        std::cerr << i << "\n";
+      }
+      exit(1);
       return;
     }
 
