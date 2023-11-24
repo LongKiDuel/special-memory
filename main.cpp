@@ -157,6 +157,7 @@ int main(int argc, char **argv) {
   // Kernel file path
   const char *kernelFilePath = "image.cl"; // Replace with your kernel file path
 
+  spdlog::set_pattern("[+ %5o ms] %v");
   // Create an instance of your 'My_class' and load the image and kernel
   image_processing::ImageBlur imageBlur(imageFilePath, kernelFilePath);
 
