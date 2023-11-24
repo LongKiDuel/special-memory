@@ -8,6 +8,17 @@ add_executable(main main.cpp)
 
 find_package(fmt CONFIG REQUIRED)
 target_link_libraries(main PRIVATE fmt::fmt)
+find_package(spdlog CONFIG REQUIRED)
+target_link_libraries(main PRIVATE spdlog::spdlog)
+
+find_package(OpenCL REQUIRED)
+target_link_libraries(main PRIVATE ${OpenCL_LIBRARIES})
+target_include_directories(main PRIVATE ${OpenCL_INCLUDE_DIRS})
+find_package(Stb REQUIRED)
+target_include_directories(main PRIVATE ${Stb_INCLUDE_DIR})
+
+configure_file(a.png ${CMAKE_BINARY_DIR}/a.png COPYONLY)
+configure_file(image.cl ${CMAKE_BINARY_DIR}/image.cl COPYONLY)
 
 enable_testing()
 add_subdirectory(test)
