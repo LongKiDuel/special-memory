@@ -7,13 +7,13 @@ __kernel void blur(__global uchar* inputImage, __global uchar* outputImage, cons
     float pixel = 0;
     float total_effect = 0;
     for (int x = -radius; x <= radius; ++x) {
-        int nx = gid.x + x;
-        if (nx < 0 || nx >= width){
+        unsigned nx = gid.x + x;
+        if (nx >= width){
             continue;
         }
         for (int y = -radius; y <= radius; ++y) {
-            int ny = gid.y + y; 
-            if(ny<0 || ny >= height){
+            unsigned ny = gid.y + y; 
+            if(ny >= height){
                 continue;
             }
 
