@@ -1,5 +1,6 @@
 #include <CL/cl.h>
 #include <CL/opencl.hpp>
+#include <algorithm>
 #include <format>
 #include <iostream>
 #include <source_location>
@@ -151,9 +152,11 @@ public:
 
     // Execute the kernel
     cl::NDRange global(width_, height_);
-    cl_int err = queue_.enqueueNDRangeKernel(kernel, cl::NullRange, global);
-    check_err(err);
-    err = queue_.finish();
+
+    // kerenl runtime longer than 600ms will be killed on intel.
+    queue_.enqueueNDRangeKernel(kernel, cl::NullRange, global);
+
+    auto err = queue_.finish();
     check_err(err);
     SPDLOG_INFO("blur {} px finished, time: {} s", radius_, sw);
     SPDLOG_INFO("start download iamge");
