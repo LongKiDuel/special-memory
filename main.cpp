@@ -2,6 +2,7 @@
 #include <CL/opencl.hpp>
 #include <format>
 #include <iostream>
+#include <source_location>
 #include <string>
 #include <vector>
 #define STB_IMAGE_IMPLEMENTATION
@@ -10,6 +11,7 @@
 #include "stb_image_write.h"
 #include <fstream>
 #include <spdlog/spdlog.h>
+#include <spdlog/stopwatch.h>
 #include <streambuf>
 // Define your lower case namespace
 
@@ -20,6 +22,36 @@ void pattern_replace(std::string &src, std::string pattern, std::string value) {
       return;
     }
     src.replace(pos, pattern.size(), value);
+  }
+}
+std::string cl_error_info_str(cl_int error) {
+  if (error != CL_SUCCESS) {
+    switch (error) {
+    case CL_DEVICE_NOT_FOUND:
+      return "Device not found";
+      break;
+    case CL_DEVICE_NOT_AVAILABLE:
+      return "Device not available";
+      break;
+    case CL_COMPILER_NOT_AVAILABLE:
+      return "Compiler not available";
+      break;
+    case CL_MEM_OBJECT_ALLOCATION_FAILURE:
+      return "Memory object allocation failure";
+      break;
+    // Add more cases for other error codes as needed
+    default:
+      return "unknown";
+      break;
+    }
+  }
+}
+void check_err(cl_int error_number, std::source_location location =
+                                        std::source_location::current()) {
+  if (error_number != CL_SUCCESS) {
+    SPDLOG_ERROR("opencl error: {} {} in [{}:{}]", error_number,
+                 cl_error_info_str(error_number), location.file_name(),
+                 location.line());
   }
 }
 namespace image_processing {
@@ -109,6 +141,7 @@ public:
         width_ * height_ * sizeof(unsigned char) * channels, imageData_);
 
     SPDLOG_INFO("start blur calculation.");
+    spdlog::stopwatch sw;
     // Create a kernel and set its arguments
     cl::Kernel kernel(program_, "blur");
     kernel.setArg(0, inputImageBuffer_);
@@ -118,14 +151,17 @@ public:
 
     // Execute the kernel
     cl::NDRange global(width_, height_);
-    queue_.enqueueNDRangeKernel(kernel, cl::NullRange, global);
-    queue_.finish();
-
+    cl_int err = queue_.enqueueNDRangeKernel(kernel, cl::NullRange, global);
+    check_err(err);
+    err = queue_.finish();
+    check_err(err);
+    SPDLOG_INFO("blur {} px finished, time: {} s", radius_, sw);
     SPDLOG_INFO("start download iamge");
     // Read back the blurred image
     queue_.enqueueReadBuffer(
         outputImageBuffer_, CL_TRUE, 0,
         width_ * height_ * sizeof(unsigned char) * channels, imageData_);
+    queue_.finish();
     SPDLOG_INFO("finish download");
   }
 
@@ -175,7 +211,7 @@ int main(int argc, char **argv) {
 
   spdlog::set_pattern("[+ %5o ms] %v");
   // Create an instance of your 'My_class' and load the image and kernel
-  for (int radius : {1, 3, 5, 10}) {
+  for (int radius : {1, 3, 5, 10, 20, 40}) {
 
     image_processing::ImageBlur imageBlur(imageFilePath, kernelFilePath,
                                           radius);
