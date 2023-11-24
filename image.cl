@@ -2,7 +2,7 @@
 __kernel void blur(__global uchar4* inputImage, __global uchar4* outputImage, const int width, const int height) {
     int2 gid = (int2)(get_global_id(0), get_global_id(1));
 
-    int radius = 3; // Adjust this for the desired blur radius
+    int radius = @radius@; // Adjust this for the desired blur radius
 
     float4 pixel = (float4)(0.0f, 0.0f, 0.0f, 0.0f);
     float total_effect = 0;

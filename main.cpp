@@ -1,6 +1,8 @@
 #include <CL/cl.h>
 #include <CL/opencl.hpp>
+#include <format>
 #include <iostream>
+#include <string>
 #include <vector>
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -10,6 +12,16 @@
 #include <spdlog/spdlog.h>
 #include <streambuf>
 // Define your lower case namespace
+
+void pattern_replace(std::string &src, std::string pattern, std::string value) {
+  {
+    auto pos = src.find(pattern);
+    if (pos == std::string::npos) {
+      return;
+    }
+    src.replace(pos, pattern.size(), value);
+  }
+}
 namespace image_processing {
 
 // Define your 'My_class' for image processing
@@ -18,8 +30,9 @@ class ImageBlur {
 
 public:
   // Constructor
-  ImageBlur(const char *imageFilePath, const char *kernelFilePath)
-      : imageFilePath_(imageFilePath), kernelFilePath_(kernelFilePath) {
+  ImageBlur(const char *imageFilePath, const char *kernelFilePath, int radius)
+      : imageFilePath_(imageFilePath), kernelFilePath_(kernelFilePath),
+        radius_(radius) {
     // Load the image using stb_image
     SPDLOG_INFO("start parse image");
     imageData_ = stbi_load(imageFilePath, &width_, &height_, nullptr, channels);
@@ -39,6 +52,8 @@ public:
 
     kernelSource_ = std::string((std::istreambuf_iterator<char>(kernelFile)),
                                 std::istreambuf_iterator<char>());
+
+    pattern_replace(kernelSource_, "@radius@", std::to_string(radius));
 
     // Initialize OpenCL
     cl::Platform::get(&platforms_);
@@ -135,6 +150,7 @@ private:
   unsigned char *imageData_ = nullptr;
   int width_;
   int height_;
+  int radius_;
   cl::Platform platform_;
   std::vector<cl::Platform> platforms_;
   cl::Device device_;
@@ -159,17 +175,21 @@ int main(int argc, char **argv) {
 
   spdlog::set_pattern("[+ %5o ms] %v");
   // Create an instance of your 'My_class' and load the image and kernel
-  image_processing::ImageBlur imageBlur(imageFilePath, kernelFilePath);
+  for (int radius : {1, 3, 5, 10}) {
 
-  // Apply the blur
-  imageBlur.ApplyBlur();
+    image_processing::ImageBlur imageBlur(imageFilePath, kernelFilePath,
+                                          radius);
 
-  // Save the blurred image to a file
-  const char *outputFilePath =
-      "blurred_image.png"; // Specify the output file path
-  imageBlur.SaveBlurredImage(outputFilePath);
+    // Apply the blur
+    imageBlur.ApplyBlur();
 
-  std::cout << "Blurred image saved to: " << outputFilePath << std::endl;
+    // Save the blurred image to a file
+    std::string outputFilePath = std::format(
+        "blurred_image_{}.png", radius); // Specify the output file path
+    imageBlur.SaveBlurredImage(outputFilePath.c_str());
+
+    SPDLOG_INFO("Blurred image saved to: {}", outputFilePath);
+  }
 
   return 0;
 }
