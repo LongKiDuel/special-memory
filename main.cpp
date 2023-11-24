@@ -1,3 +1,4 @@
+#include <CL/cl.h>
 #include <CL/opencl.hpp>
 #include <iostream>
 #include <vector>
@@ -6,8 +7,8 @@
 #include "stb_image.h"
 #include "stb_image_write.h"
 #include <fstream>
+#include <spdlog/spdlog.h>
 #include <streambuf>
-
 // Define your lower case namespace
 namespace image_processing {
 
@@ -20,12 +21,13 @@ public:
   ImageBlur(const char *imageFilePath, const char *kernelFilePath)
       : imageFilePath_(imageFilePath), kernelFilePath_(kernelFilePath) {
     // Load the image using stb_image
-
-    imageData_ = stbi_load(imageFilePath, &width_, &height_, nullptr, 4);
+    SPDLOG_INFO("start parse image");
+    imageData_ = stbi_load(imageFilePath, &width_, &height_, nullptr, channels);
     if (!imageData_) {
       std::cerr << "Failed to load image: " << imageFilePath << std::endl;
       return;
     }
+    SPDLOG_INFO("image loaded into memory");
 
     // Read the OpenCL kernel source code from the file
     std::ifstream kernelFile(kernelFilePath);
@@ -57,6 +59,7 @@ public:
 
     // Choose the first device
     device_ = devices_[0];
+    SPDLOG_INFO("using device: {}", device_.getInfo<CL_DEVICE_NAME>());
 
     // Create an OpenCL context
     context_ = cl::Context(device_);
@@ -85,10 +88,12 @@ public:
   // Member function to apply blur to the loaded image
   void ApplyBlur() {
     // Transfer image data to the input buffer
+    SPDLOG_INFO("upload image");
     queue_.enqueueWriteBuffer(
         inputImageBuffer_, CL_TRUE, 0,
         width_ * height_ * sizeof(unsigned char) * channels, imageData_);
 
+    SPDLOG_INFO("start blur calculation.");
     // Create a kernel and set its arguments
     cl::Kernel kernel(program_, "blur");
     kernel.setArg(0, inputImageBuffer_);
@@ -99,17 +104,22 @@ public:
     // Execute the kernel
     cl::NDRange global(width_, height_);
     queue_.enqueueNDRangeKernel(kernel, cl::NullRange, global);
+    queue_.finish();
 
+    SPDLOG_INFO("start download iamge");
     // Read back the blurred image
     queue_.enqueueReadBuffer(
         outputImageBuffer_, CL_TRUE, 0,
         width_ * height_ * sizeof(unsigned char) * channels, imageData_);
+    SPDLOG_INFO("finish download");
   }
 
   // Member function to save the blurred image to a file
   void SaveBlurredImage(const char *outputFilePath) {
-    stbi_write_png(outputFilePath, width_, height_, 4, imageData_,
+    SPDLOG_INFO("start saving file");
+    stbi_write_png(outputFilePath, width_, height_, channels, imageData_,
                    width_ * channels);
+    SPDLOG_INFO("file saved");
   }
 
   // Destructor to free image data
@@ -139,9 +149,10 @@ private:
 
 } // namespace image_processing
 
-int main() {
+int main(int argc, char **argv) {
   // Image file path
-  const char *imageFilePath = "a.png"; // Replace with your image file path
+  const char *imageFilePath =
+      argc == 1 ? "a.png" : argv[1]; // Replace with your image file path
 
   // Kernel file path
   const char *kernelFilePath = "image.cl"; // Replace with your kernel file path

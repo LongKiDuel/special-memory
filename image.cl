@@ -5,7 +5,7 @@ __kernel void blur(__global uchar4* inputImage, __global uchar4* outputImage, co
     int radius = 3; // Adjust this for the desired blur radius
 
     float4 pixel = (float4)(0.0f, 0.0f, 0.0f, 0.0f);
-
+    float total_effect = 0;
     for (int x = -radius; x <= radius; ++x) {
         for (int y = -radius; y <= radius; ++y) {
             int2 neighbor = gid + (int2)(x, y);
@@ -14,12 +14,16 @@ __kernel void blur(__global uchar4* inputImage, __global uchar4* outputImage, co
                 int index = neighbor.x + neighbor.y * width;
                 uchar4 color = inputImage[index];
 
-                pixel += (float4)(color.x, color.y, color.z, color.w);
+                float distance =  (x * x + y * y);
+                distance += 1;
+                float effect = (1/sqrt(distance));
+                total_effect += effect;
+                pixel += (float4)(color.x, color.y, color.z, color.w) * effect ;
             }
         }
     }
 
-    pixel /= ((2 * radius + 1) * (2 * radius + 1));
+    pixel /= total_effect;
 
     int index = gid.x + gid.y * width;
     outputImage[index] = (uchar4)(pixel.x, pixel.y, pixel.z, pixel.w);
