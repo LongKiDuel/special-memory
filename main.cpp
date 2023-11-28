@@ -6,7 +6,7 @@
 
 class Hue_ring {
 public:
-  Hue_ring(glm::vec3 base_hsv = {0, 0.7, 0.7}, float hue_step = 15)
+  Hue_ring(glm::vec3 base_hsv = {0, 0.7, 0.9}, float hue_step = 15)
       : base_(base_hsv), current_(base_), step_(hue_step) {}
   glm::vec3 next_rgb() {
     next();
@@ -134,8 +134,11 @@ std::string css = R"**(
         }
     </style>
 )**";
+#include <array>
 int main() {
-  Hue_ring ring{};
+  std::array<Hue_ring, 3> rings = {Hue_ring{glm::vec3{0, 0.9f, 0.5f}},
+                                   Hue_ring{glm::vec3{0, 0.7f, 0.7f}},
+                                   Hue_ring{glm::vec3{0, 0.7f, 0.9f}}};
 
   // Create a Text_table instance with sample data
   Text_table table;
@@ -145,13 +148,16 @@ int main() {
                   {"Row3-1", "Row3-2", "Row3-3"}};
 
   // Render the table to HTML
-  for (int i = 0; i < (360 / ring.step()); i++) {
-    auto color = ring.next_rgb();
-    auto str = fmt::format("<p style=\"color:rgb({},{},{});\">This is a "
-                           "paragraph with {} color.</p>",
-                           color.r * 255.99, color.g * 255.99, color.b * 255.99,
-                           color);
-    table.add(str);
+  for (int i = 0; i < (360 / rings[0].step()); i++) {
+    for (int j = 0; j < 3; j++) {
+
+      auto color = rings[j].next_rgb();
+      auto str = fmt::format("<p style=\"color:rgb({},{},{});\">This is a "
+                             "paragraph with {} color.</p>",
+                             color.r * 255.99, color.g * 255.99,
+                             color.b * 255.99, color);
+      table.add(str);
+    }
   }
   std::string htmlTable = render_to_html(table);
 
