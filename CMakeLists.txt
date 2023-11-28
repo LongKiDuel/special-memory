@@ -8,6 +8,8 @@ add_executable(main main.cpp)
 
 find_package(fmt CONFIG REQUIRED)
 target_link_libraries(main PRIVATE fmt::fmt)
+find_package(glm CONFIG REQUIRED)
+target_link_libraries(main PRIVATE glm::glm)
 
 enable_testing()
 add_subdirectory(test)
