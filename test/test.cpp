@@ -1,6 +1,18 @@
 #include <algorithm>
 #include <gtest/gtest.h>
 
+struct Edge_fit_result {
+  int item_size_{};
+  float scale_{};
+};
+constexpr Edge_fit_result compute_edge_fit(int container_size, int size) {
+  float scale = static_cast<float>(container_size) / static_cast<float>(size);
+  Edge_fit_result result;
+  result.item_size_ = scale * size;
+  result.scale_ = scale;
+  return result;
+}
+
 struct Rect_fit_result {
   int item_width_{};
   int item_height_{};
@@ -23,6 +35,26 @@ constexpr Rect_fit_result compute_rect_fit(int container_width,
   result.item_offset_height_ = (container_height - result.item_height_) / 2;
   result.scale_ = min_scale;
   return result;
+}
+
+// Demonstrate some basic assertions.
+TEST(computeEdgeTest, BasicAssertions) {
+  const int device_width = 640;
+  {
+    const int width = 33;
+    constexpr auto result = compute_edge_fit(device_width, width);
+    EXPECT_EQ(device_width, result.item_size_);
+  }
+  {
+    const int width = 189;
+    constexpr auto result = compute_edge_fit(device_width, width);
+    EXPECT_EQ(device_width, result.item_size_);
+  }
+  {
+    const int width = 798;
+    constexpr auto result = compute_edge_fit(device_width, width);
+    EXPECT_EQ(device_width, result.item_size_);
+  }
 }
 // Demonstrate some basic assertions.
 TEST(computeRectTest, BasicAssertions) {
