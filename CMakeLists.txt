@@ -23,6 +23,8 @@ target_link_libraries(imguix PRIVATE Vulkan::Vulkan)
 
 target_link_libraries(main PRIVATE fmt::fmt)
 target_link_libraries(main PRIVATE imguix)
+find_package(Tracy CONFIG REQUIRED)
+target_link_libraries(main PRIVATE Tracy::TracyClient)
 
 enable_testing()
 add_subdirectory(test)

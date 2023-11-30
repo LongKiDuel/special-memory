@@ -1,17 +1,19 @@
 {
-    "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg/master/scripts/vcpkg.schema.json",
-    "name": "memory",
-    "version": "0.0.1",
-    "dependencies": [
-        "fmt",
-        "gtest",
-        "benchmark",
-        "vulkan",
-        {
-            "name":"imgui",
-            "features": [
-                "glfw-binding", "vulkan-binding"
-            ]
-        }
-    ]
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg/master/scripts/vcpkg.schema.json",
+  "name": "memory",
+  "version": "0.0.1",
+  "dependencies": [
+    "benchmark",
+    "fmt",
+    "gtest",
+    {
+      "name": "imgui",
+      "features": [
+        "glfw-binding",
+        "vulkan-binding"
+      ]
+    },
+    "vulkan",
+    "tracy"
+  ]
 }
