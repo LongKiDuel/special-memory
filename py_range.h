@@ -10,7 +10,7 @@ template <typename T> struct Range_current_to_end {
     return *this;
   }
   template <typename U> bool operator!=(const U &) const {
-    return current_value != end_value;
+    return current_value < end_value;
   }
 
   Range_current_to_end begin() const { return *this; }
