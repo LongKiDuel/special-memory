@@ -1,5 +1,7 @@
+#include "py_range.h"
 #include "state_group.h"
 #include <cstdint>
+#include <iostream>
 #include <optional>
 #define IMGUI_DEFINE_MATH_OPERATORS
 ///
@@ -39,6 +41,9 @@ void wrapping_test() {
   ImGui::Text("%s", is_debug ? "debug" : "no debug");
 }
 int main() {
+  for (auto n : py_range(10)) {
+    std::cout << n << "\n";
+  }
   auto app = ImGuiX::create_vulkan_app();
 
   app->add_window(std::make_shared<Window_slot>("Wrapping", wrapping_test));
