@@ -1,3 +1,5 @@
+#include "state_group.h"
+#include <cstdint>
 #include <optional>
 #define IMGUI_DEFINE_MATH_OPERATORS
 ///
@@ -13,7 +15,29 @@
 #include "switch_hold_with_callback.h"
 #include "window_slot.h"
 
-void wrapping_test() {}
+enum class App_state {
+  loadding,
+  running,
+  pause,
+  stopped,
+
+  debug_window,
+};
+
+State_group<App_state> app_states;
+void wrapping_test() {
+  bool is_debug = false;
+  if (app_states.check_states(std::array{App_state::debug_window})) {
+    is_debug = true;
+  }
+  if (ImGui::Button("add debug")) {
+    app_states.add(App_state::debug_window);
+  }
+  if (ImGui::Button("remove debug")) {
+    app_states.remove(App_state::debug_window);
+  }
+  ImGui::Text("%s", is_debug ? "debug" : "no debug");
+}
 int main() {
   auto app = ImGuiX::create_vulkan_app();
 
