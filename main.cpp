@@ -209,7 +209,34 @@ int main(int argc, char **argv) {
   if (argc > 1) {
     words = load_unique_words(argv[1]);
   } else {
-    words = {"build", "help", "clean"};
+    words = {
+        "build",
+        "help",
+        "clean",
+        // git command.
+        "clone",
+        "init",
+        "add",
+        "mv",
+        "restore",
+        "rm",
+        "bisect",
+        "diff",
+        "grep",
+        "log",
+        "show",
+        "status",
+        "brance",
+        "commit",
+        "merge",
+        "rebase",
+        "reset",
+        "switch",
+        "tag",
+        "fetch",
+        "pull",
+        "push",
+    };
   }
 
   for (auto &w : words) {
