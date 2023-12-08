@@ -1,4 +1,5 @@
 #include <cstdint>
+#include <cstdlib>
 #include <iostream>
 #include <optional>
 #include <string_view>
@@ -36,6 +37,8 @@ struct Rating_result {
   bool is_sub_str{};
   int same_character_out_of_order_count{};
   int in_order_sub_str_count{};
+
+  int length_diff{};
 };
 
 Rating_result rate_the_text(std::string_view pattern_text,
@@ -69,18 +72,26 @@ Rating_result rate_the_text(std::string_view pattern_text,
         std::max(result.in_order_sub_str_count, count);
     start++;
   }
+  result.length_diff = text_to_rate.size() - pattern_text.size();
 
   return result;
 }
 
-int64_t get_score(Rating_result result) {
-  int64_t score = 0;
+float get_score(Rating_result result) {
+  float score = 0;
   score +=
       result.is_sub_str ? 1000 : 0; // Arbitrary high value for substring match
   score += result.same_character_out_of_order_count *
            10; // Each out-of-order match adds 10
   score +=
       result.in_order_sub_str_count * 100; // Each in-order character adds 100
+
+  if (result.length_diff > 0) {
+    score -= std::abs(result.length_diff);
+  } else {
+    score -=
+        std::abs(result.length_diff) * 0.5; // less cost for shorter string.
+  }
   return score;
 }
 
@@ -94,7 +105,7 @@ rate_texts(std::string_view pattern, const std::vector<std::string_view> &texts,
   if (pattern.empty()) {
     return {};
   }
-  std::vector<std::pair<std::string_view, int64_t>> scored_texts;
+  std::vector<std::pair<std::string_view, float>> scored_texts;
 
   for (auto &text : texts) {
     auto result = rate_the_text(pattern, text);
@@ -103,14 +114,24 @@ rate_texts(std::string_view pattern, const std::vector<std::string_view> &texts,
       scored_texts.emplace_back(text, score);
     }
   }
-
+  if (scored_texts.empty()) {
+    return {};
+  }
   std::sort(scored_texts.begin(), scored_texts.end(),
             [](const auto &a, const auto &b) { return a.second > b.second; });
+
+  auto max_score = scored_texts[0].second;
 
   std::vector<std::string_view> top_texts;
   for (int i = 0; i < std::min(config.limit.value_or(999999),
                                static_cast<int>(scored_texts.size()));
        ++i) {
+    if (config.max_distance_from_1st) {
+      if (max_score - scored_texts[i].second >
+          config.max_distance_from_1st.value()) {
+        continue;
+      }
+    }
     top_texts.push_back(scored_texts[i].first);
   }
 
@@ -127,7 +148,9 @@ void wrapping_test() {
 
   ImGui::InputText("input", &input);
 
-  auto result = text_rating::rate_texts(input, command_group);
+  text_rating::Filter_config config{};
+  config.max_distance_from_1st = 300;
+  auto result = text_rating::rate_texts(input, command_group, config);
 
   for (auto t : result) {
     ImGui::Text("%s", t.data());
