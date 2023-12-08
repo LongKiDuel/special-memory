@@ -2,6 +2,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <optional>
 #include <sqlite_modern_cpp.h>
 #include <string>
 #include <xxhash.h>
@@ -92,12 +93,14 @@ bool task_file(sqlite::database &db, std::string filepath) {
   // Calculate hashes
   auto part_hash = calculate_part_hash(filepath);
   auto part_hash_str = to_hex_string(part_hash);
-  std::string full_hash_str;
+  std::optional<std::string> full_hash_str;
   if (file_size <= part_hash_size) {
     full_hash_str = part_hash_str;
   } else {
-    auto full_hash = calculate_hash(filepath);
-    full_hash_str = to_hex_string(full_hash);
+    if (bool use_full_hash = false) {
+      auto full_hash = calculate_hash(filepath);
+      full_hash_str = to_hex_string(full_hash);
+    }
   }
   auto file_write_time = std::filesystem::last_write_time(filepath);
 
@@ -113,9 +116,11 @@ int main() {
   try {
     // Open or create the database
     sqlite::database db("file_info.db");
-    db << "DROP TABLE file_info;";
 
     // Create the table
+
+    // Use TEXT for two hash field cost ~300 bytes for a row in 64 bits hash hex
+    // string. it is same for VARCHAR(32)
     db << "CREATE TABLE IF NOT EXISTS file_info ("
           "filepath TEXT PRIMARY KEY,"
           "size INTEGER,"
@@ -123,6 +128,9 @@ int main() {
           "first_block_hash TEXT,"
           "last_write_time INTEGER);";
     db << "BEGIN TRANSACTION;";
+
+    // clear old table in test;
+    db << "DELETE FROM file_info;";
 
     task_file(db, "/home");
 
