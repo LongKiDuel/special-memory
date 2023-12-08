@@ -9,6 +9,15 @@ add_executable(main main.cpp)
 find_package(fmt CONFIG REQUIRED)
 target_link_libraries(main PRIVATE fmt::fmt)
 
+find_path(SQLITE_MODERN_CPP_INCLUDE_DIRS "sqlite_modern_cpp.h")
+target_include_directories(main PRIVATE ${SQLITE_MODERN_CPP_INCLUDE_DIRS})
+target_include_directories(main PRIVATE sqlite::sqlite)
+find_package(xxHash CONFIG REQUIRED)
+target_link_libraries(main PRIVATE xxHash::xxhash)
+
+find_package(unofficial-sqlite3 CONFIG REQUIRED)
+target_link_libraries(main PRIVATE unofficial::sqlite3::sqlite3)
+
 enable_testing()
 add_subdirectory(test)
 
