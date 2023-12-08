@@ -69,6 +69,7 @@ std::string to_hex_string(uint64_t number) {
   return to_hex_string(std::span<const uint8_t>((uint8_t *)&number, 8));
 }
 
+const bool skip_symbol_link = true;
 bool task_file(sqlite::database &db, std::string filepath) {
   if (std::filesystem::is_directory(filepath)) {
     std::filesystem::directory_iterator begin{
@@ -79,6 +80,9 @@ bool task_file(sqlite::database &db, std::string filepath) {
       task_file(db, begin->path().string());
       ++begin;
     }
+    return true;
+  }
+  if (skip_symbol_link && std::filesystem::is_symlink(filepath)) {
     return true;
   }
   if (!std::filesystem::is_regular_file(filepath)) {
