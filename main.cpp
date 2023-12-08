@@ -84,9 +84,13 @@ int64_t get_score(Rating_result result) {
   return score;
 }
 
+struct Filter_config {
+  std::optional<float> max_distance_from_1st{};
+  std::optional<int> limit{10};
+};
 std::vector<std::string_view>
 rate_texts(std::string_view pattern, const std::vector<std::string_view> &texts,
-           int limit = 10) {
+           Filter_config config = {}) {
   if (pattern.empty()) {
     return {};
   }
@@ -104,7 +108,8 @@ rate_texts(std::string_view pattern, const std::vector<std::string_view> &texts,
             [](const auto &a, const auto &b) { return a.second > b.second; });
 
   std::vector<std::string_view> top_texts;
-  for (int i = 0; i < std::min(limit, static_cast<int>(scored_texts.size()));
+  for (int i = 0; i < std::min(config.limit.value_or(999999),
+                               static_cast<int>(scored_texts.size()));
        ++i) {
     top_texts.push_back(scored_texts[i].first);
   }
@@ -114,10 +119,11 @@ rate_texts(std::string_view pattern, const std::vector<std::string_view> &texts,
 } // namespace text_rating
 
 #include <imgui_stdlib.h>
+std::vector<std::string_view> command_group;
+
 void wrapping_test() {
   bool is_debug = false;
   static std::string input;
-  std::vector<std::string_view> command_group = {"build", "help", "clean"};
 
   ImGui::InputText("input", &input);
 
@@ -127,8 +133,65 @@ void wrapping_test() {
     ImGui::Text("%s", t.data());
   }
 }
-int main() {
+
+#include <algorithm>
+#include <cctype>
+#include <fstream>
+#include <set>
+#include <sstream>
+#include <string>
+#include <vector>
+
+std::string remove_punctuation_with_space(const std::string &word) {
+  std::string result;
+  for (char ch : word) {
+    if (!std::ispunct(static_cast<unsigned char>(ch))) {
+      result += ch;
+    } else {
+      result += ' ';
+    }
+  }
+  return result;
+}
+
+std::vector<std::string> load_unique_words(const std::string &file_name) {
+  std::ifstream file(file_name);
+  if (!file.is_open()) {
+    throw std::runtime_error("Unable to open file: " + file_name);
+  }
+
+  std::stringstream buffer;
+  buffer << file.rdbuf();
+  std::string content = remove_punctuation_with_space(buffer.str());
+
+  std::istringstream iss(content);
+  std::vector<std::string> words;
+  std::set<std::string> unique_words;
+  std::string word;
+
+  while (iss >> word) {
+    if (unique_words.find(word) == unique_words.end()) {
+      unique_words.insert(word);
+      words.push_back(word);
+    }
+  }
+
+  return words;
+}
+
+int main(int argc, char **argv) {
   auto app = ImGuiX::create_vulkan_app();
+  std::vector<std::string> words;
+
+  if (argc > 1) {
+    words = load_unique_words(argv[1]);
+  } else {
+    words = {"build", "help", "clean"};
+  }
+
+  for (auto &w : words) {
+    command_group.push_back(w);
+  }
 
   app->add_window(std::make_shared<Window_slot>("Wrapping", wrapping_test));
 
