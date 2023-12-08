@@ -150,6 +150,7 @@ void wrapping_test() {
 
   text_rating::Filter_config config{};
   config.max_distance_from_1st = 300;
+  config.limit = 50;
   auto result = text_rating::rate_texts(input, command_group, config);
 
   for (auto t : result) {
