@@ -1,8 +1,7 @@
-#include "py_range.h"
-#include "state_group.h"
 #include <cstdint>
 #include <iostream>
 #include <optional>
+#include <string_view>
 #define IMGUI_DEFINE_MATH_OPERATORS
 ///
 #include "imguix/window.h"
@@ -14,7 +13,6 @@
 #include <string>
 #include <vector>
 
-#include "switch_hold_with_callback.h"
 #include "window_slot.h"
 
 enum class App_state {
@@ -26,24 +24,29 @@ enum class App_state {
   debug_window,
 };
 
-State_group<App_state> app_states;
+// get a input, then select best matched text from a group of resoucre.
+//
+// e.g.
+// input: bultd
+// src: build, back, help
+// return [build, back, help]
+namespace text_rating {
+struct Rating_result {};
+Rating_result rate_the_text(std::string_view pattern_text,
+                            std::string_view text_to_rate) {}
+int64_t get_socer(Rating_result result) {}
+std::vector<std::string_view> rate_texts(std::string_view pattern,
+                                         std::vector<std::string_view> texts,
+                                         int limit = 10) {}
+} // namespace text_rating
 void wrapping_test() {
   bool is_debug = false;
-  if (app_states.check_states(std::array{App_state::debug_window})) {
-    is_debug = true;
-  }
-  if (ImGui::Button("add debug")) {
-    app_states.add(App_state::debug_window);
-  }
-  if (ImGui::Button("remove debug")) {
-    app_states.remove(App_state::debug_window);
-  }
+  static std::string input;
+  std::vector<std::string> command_group = {"build", "help", "clean"};
+
   ImGui::Text("%s", is_debug ? "debug" : "no debug");
 }
 int main() {
-  for (auto n : py_range(10)) {
-    std::cout << n << "\n";
-  }
   auto app = ImGuiX::create_vulkan_app();
 
   app->add_window(std::make_shared<Window_slot>("Wrapping", wrapping_test));
