@@ -116,7 +116,7 @@ bool task_file(sqlite::database &db, std::string filepath) {
      << part_hash_str << file_write_time.time_since_epoch().count();
   return true;
 }
-int main() {
+int main(int argc, char **argv) {
   try {
     // Open or create the database
     sqlite::database db("file_info.db");
@@ -136,7 +136,8 @@ int main() {
     // clear old table in test;
     db << "DELETE FROM file_info;";
 
-    task_file(db, "/home");
+    std::string path = argc > 1 ? argv[1] : "/home";
+    task_file(db, path);
 
     db << "COMMIT;";
 
