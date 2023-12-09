@@ -40,20 +40,20 @@ private:
 
 class UnixProcess {
 private:
-  int pipefd[2];
+  int stdout_fd[2]; // read form 0, write to 1.
   pid_t pid;
 
 public:
   UnixProcess() {
-    if (pipe(pipefd) == -1) {
+    if (pipe(stdout_fd) == -1) {
       perror("pipe");
       exit(EXIT_FAILURE);
     }
   }
 
   ~UnixProcess() {
-    close(pipefd[0]);
-    close(pipefd[1]);
+    close(stdout_fd[0]);
+    close(stdout_fd[1]);
     wait(NULL); // Wait for child
   }
 
@@ -65,9 +65,9 @@ public:
     }
 
     if (pid == 0) { // Child process
-      dup2(pipefd[1], STDOUT_FILENO);
-      close(pipefd[1]);
-      close(pipefd[0]);
+      dup2(stdout_fd[1], STDOUT_FILENO);
+      close(stdout_fd[1]);
+      close(stdout_fd[0]);
       {
         std::vector<char *> argv;
         argv.push_back(command.data());
@@ -80,33 +80,21 @@ public:
 
       _exit(EXIT_FAILURE);
     } else { // Parent process
-      close(pipefd[1]);
+      close(stdout_fd[1]);
       return true;
     }
   }
 
-  // Methods for reading/writing to the process's stdin, stdout, and stderr
-  // ...
-  // bool writeToStdIn(const std::string &data) {
-  //   return write(pipefd[1], data.c_str(), data.size()) != -1;
-  // }
-
   std::string readFromStdOut() {
     char buffer[4096];
-    ssize_t readBytes = read(pipefd[0], buffer, sizeof(buffer));
+    ssize_t readBytes = read(get_stdout_fd(), buffer, sizeof(buffer));
     if (readBytes > 0) {
       return std::string(buffer, readBytes);
     }
     return "";
   }
 
-  std::string readFromStdErr() {
-    // This method needs a separate pair of pipes for stderr
-    // It's similar to readFromStdOut but using the stderr pipe
-    // ...
-    return "";
-  }
-  int get_stdout_fd() { return pipefd[0]; }
+  int get_stdout_fd() { return stdout_fd[0]; }
 };
 
 int main() {
@@ -115,14 +103,6 @@ int main() {
     UnixProcess git{};
     git.create("git", {"status"});
     auto fd = git.get_stdout_fd();
-    // file.ptr = fdopen(fd, "r");
-    // if (!file.get()) {
-    //   std::cerr << "Failed to open file descriptor" << std::endl;
-    //   return 1;
-    // }
-    // char bufa[2455]{};
-    // fread(bufa, 1, sizeof bufa, file.get());
-    // std::cout << bufa << std::endl;
 
     fdstreambuf buf{fd};
     std::istream is{&buf};
