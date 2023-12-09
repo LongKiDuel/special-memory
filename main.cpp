@@ -1,9 +1,12 @@
+#include <array>
 #include <cstdio>
 #include <cstring>
 #include <fstream>
 #include <iostream>
 #include <istream>
+#include <iterator>
 #include <memory>
+#include <ostream>
 #include <streambuf>
 #include <string>
 #include <sys/wait.h>
@@ -97,7 +100,50 @@ public:
   int get_stdout_fd() { return stdout_fd[0]; }
 };
 
+class MyStreambuf : public std::streambuf {
+public:
+  MyStreambuf() {
+    setp(buf_.begin(), buf_.end()); // Set the output buffer
+  }
+
+protected:
+  // This function is called when the buffer is full
+  int_type overflow(int_type ch) override {
+    if (ch != traits_type::eof()) {
+      auto size = this->epptr() - this->pbase();
+      auto str = std::string{pbase(), epptr()};
+      memset(this->pbase(), 0, size);
+      setp(pbase(), epptr());
+      return 0;
+    }
+    return traits_type::eof();
+  }
+
+  //   // This function is used to write a sequence of characters
+  //   std::streamsize xsputn(const char_type *s, std::streamsize n) override {
+  //     // Implement your custom logic to write 'n' characters from 's'
+  //     // to your output device or storage
+  //     // You can use traits_type::copy or any other method to copy the data
+  //     // Make sure to update the buffer pointers accordingly
+  //     return n; // Return the number of characters written
+  //   }
+
+private:
+  std::array<char, 64> buf_{};
+};
+void stream_test() {
+  char cbuf[4]{};
+  MyStreambuf buf{};
+  std::ostream os{&buf};
+  os << 'a';
+  os << "helo wod";
+  for (int i = 0; i < 10; i++) {
+    os << (char)('0' + i);
+  }
+  os.flush();
+}
 int main() {
+  stream_test();
   std::string str;
   {
     UnixProcess git{};
