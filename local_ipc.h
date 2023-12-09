@@ -11,10 +11,11 @@ public:
   virtual void stop_new_connection() = 0;
 };
 class Client {
+public:
   virtual ~Client() = default;
   virtual void send_message(std::string message) = 0;
 };
 
 std::unique_ptr<Server> create_server(std::string path);
-std::unique_ptr<Client> create_Client(std::string path);
+std::unique_ptr<Client> create_client(std::string path);
 } // namespace local_ipc

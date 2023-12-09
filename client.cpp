@@ -1,13 +1,14 @@
-#include "client.h"
+#include "local_ipc.h"
+#include <iostream>
 #include <string>
 int main(int argc, char **argv) {
 
   // In the client process
   try {
-    Client client("/tmp/mysocket");
+    auto client = local_ipc::create_client("/tmp/mysocket");
     std::string str;
     str = argv[1] ? argv[1] : "example.txt";
-    client.sendMessage(str);
+    client->send_message(str);
   } catch (const std::exception &e) {
     std::cerr << "Client error: " << e.what() << std::endl;
   }
