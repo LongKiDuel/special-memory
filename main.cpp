@@ -128,8 +128,8 @@ int main() {
     std::istream is{&buf};
     std::string line;
     while (std::getline(is, line)) {
-
-      std::cout << line << " " << std::flush;
+      str += line;
+      str += '\n';
     }
   }
   std::cout << "\033[1;32m" << str << "\033[0m" << std::endl;
