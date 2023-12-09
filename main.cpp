@@ -36,7 +36,6 @@ public:
       close(pipefd[1]);
       dup2(pipefd[0], STDIN_FILENO);
       close(pipefd[0]);
-      // execlp(command.c_str(), command.c_str(), (char *)NULL);
       {
         std::vector<char *> argv;
         argv.push_back(command.data());
@@ -44,7 +43,7 @@ public:
           argv.push_back(arg.data());
         }
         argv.push_back(nullptr);
-        execvp(command.data(), argv.data());
+        execvp(command.data(), argv.data()); // v for array, p for $PATH
       }
 
       _exit(EXIT_FAILURE);
