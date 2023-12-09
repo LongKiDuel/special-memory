@@ -9,6 +9,9 @@ add_executable(main main.cpp)
 find_package(fmt CONFIG REQUIRED)
 target_link_libraries(main PRIVATE fmt::fmt)
 
+find_package(zstd CONFIG REQUIRED)
+target_link_libraries(main PRIVATE $<IF:$<TARGET_EXISTS:zstd::libzstd_shared>,zstd::libzstd_shared,zstd::libzstd_static>)
+
 enable_testing()
 add_subdirectory(test)
 
