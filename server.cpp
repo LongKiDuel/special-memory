@@ -1,12 +1,22 @@
-#include "server.h"
+#include "local_ipc.h"
+#include <csignal>
+#include <iostream>
+
 int main() {
   // In the server process
+  static bool stop{};
   try {
-    Server server("/tmp/mysocket");
+    static auto server = local_ipc::create_server("/tmp/mysocket");
+    signal(SIGINT, [](int) {
+      stop = true;
+      server->stop_new_connection();
+    });
     while (true) {
-      server.acceptConnection();
-      std::string filename = server.receiveMessage();
-      server.openFile(filename);
+      if (stop) {
+        break;
+      }
+      std::string filename = server->receive_message();
+      std::cout << "receive filename: " << filename << "\n";
     }
   } catch (const std::exception &e) {
     std::cerr << "Server error: " << e.what() << std::endl;

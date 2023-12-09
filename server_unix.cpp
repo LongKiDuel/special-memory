@@ -1,17 +1,22 @@
+#include "local_ipc.h"
 #include <fstream>
 #include <iostream>
+#include <memory>
 #include <string>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
 
-class Server {
+namespace {
+
+class Server_impl {
 private:
-  int server_fd, client_fd;
+  std::string path_;
   struct sockaddr_un address;
+  int server_fd{}, client_fd{};
 
 public:
-  Server(const std::string &socket_path) {
+  Server_impl(const std::string &socket_path) {
     server_fd = socket(AF_UNIX, SOCK_STREAM, 0);
     if (server_fd == -1) {
       throw std::runtime_error("Socket creation failed");
@@ -28,6 +33,7 @@ public:
     if (listen(server_fd, 3) < 0) {
       throw std::runtime_error("Listen failed");
     }
+    path_ = socket_path;
   }
 
   void acceptConnection() {
@@ -54,10 +60,30 @@ public:
       std::cout << "Failed to open file: " << filename << std::endl;
     }
   }
+  void stop_new_connection() { close(server_fd); }
 
-  ~Server() {
+  ~Server_impl() {
     close(client_fd);
     close(server_fd);
     unlink(address.sun_path);
   }
 };
+} // namespace
+
+namespace local_ipc {
+class Unix_server : public Server {
+public:
+  Unix_server(std::string path) : sv{std::move(path)} {}
+  std::string receive_message() override {
+    sv.acceptConnection();
+    return sv.receiveMessage();
+  }
+  void stop_new_connection() override { sv.stop_new_connection(); }
+
+private:
+  Server_impl sv;
+};
+std::unique_ptr<Server> create_server(std::string path) {
+  return std::make_unique<Unix_server>(std::move(path));
+}
+} // namespace local_ipc
