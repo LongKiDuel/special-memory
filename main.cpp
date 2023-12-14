@@ -12,6 +12,7 @@
 
 #include <amqp_tcp_socket.h>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include "utils.h"
@@ -59,6 +60,7 @@ static void send_batch(amqp_connection_state_t conn, char const *queue_name,
 
     while (((i * 1000000.0) / (now - start_time)) > rate_limit) {
       // microsleep(2000);
+      std::this_thread::sleep_for(std::chrono::microseconds{2000});
       now = now_microseconds();
     }
   }
