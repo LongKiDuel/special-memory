@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: mit
 
 #include <chrono>
+#include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <stdint.h>
 #include <stdio.h>
@@ -9,6 +11,8 @@
 #include <string.h>
 
 #include <amqp_tcp_socket.h>
+#include <string>
+#include <vector>
 
 #define SUMMARY_EVERY_US 1000000
 
@@ -85,14 +89,42 @@ void die(auto text) {
   std::cerr << "Die: " << text << std::endl;
   exit(1);
 }
-int main(int argc, char const *const *argv) {
+void setup_args_cache(std::string id, int &argc, char **&argv) {
+  auto name = std::filesystem::temp_directory_path() / (id + ".arg-cache");
+  if (argc == 1) {
+    if (std::filesystem::exists(name)) {
+      std::ifstream file{name};
+      static std::vector<std::string> array;
+      std::string line;
+      while (std::getline(file, line)) {
+        array.push_back(line);
+      }
+      argc = array.size();
+      static std::vector<char *> argvv;
+      for (int i = 0; i < argc; i++) {
+        argvv.push_back(array[i].data());
+      }
+      argv = argvv.data();
+      std::cerr << "using arg cache: " << name << "\n";
+      for (int i = 0; i < argc; i++) {
+        std::cerr << i << ": " << array[i] << "\n";
+      }
+    }
+  } else {
+    std::ofstream file{name};
+    for (int i = 0; i < argc; i++) {
+      file << argv[i] << '\n';
+    }
+  }
+}
+int main(int argc, char **argv) {
   char const *hostname;
   int port, status;
   int rate_limit;
   int message_count;
   amqp_socket_t *socket = NULL;
   amqp_connection_state_t conn;
-
+  setup_args_cache("amqp-producer", argc, argv);
   if (argc < 5) {
     fprintf(stderr,
             "Usage: amqp_producer host port rate_limit message_count\n");
