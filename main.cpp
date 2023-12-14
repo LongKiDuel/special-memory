@@ -14,20 +14,9 @@
 #include <string>
 #include <vector>
 
+#include "utils.h"
 #define SUMMARY_EVERY_US 1000000
 
-uint64_t now_microseconds() {
-  return std::chrono::duration_cast<std::chrono::milliseconds>(
-             std::chrono::high_resolution_clock::now().time_since_epoch())
-      .count();
-}
-
-auto die_on_error(auto b, auto txt) {
-  if (!b) {
-    std::cerr << txt << std::endl;
-    exit(1);
-  }
-}
 static void send_batch(amqp_connection_state_t conn, char const *queue_name,
                        int rate_limit, int message_count) {
   uint64_t start_time = now_microseconds();
@@ -84,11 +73,7 @@ static void send_batch(amqp_connection_state_t conn, char const *queue_name,
            (message_count / (total_delta / 1000000.0)));
   }
 }
-auto die_on_amqp_error(auto, auto) {}
-void die(auto text) {
-  std::cerr << "Die: " << text << std::endl;
-  exit(1);
-}
+
 void setup_args_cache(std::string id, int &argc, char **&argv) {
   auto name = std::filesystem::temp_directory_path() / (id + ".arg-cache");
   if (argc == 1) {

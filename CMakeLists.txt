@@ -5,11 +5,13 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 20)
 
 add_executable(main main.cpp)
+add_executable(consumer consumer.cpp)
 
 find_package(fmt CONFIG REQUIRED)
 target_link_libraries(main PRIVATE fmt::fmt)
 find_package(rabbitmq-c CONFIG REQUIRED)
 target_link_libraries(main PRIVATE rabbitmq::rabbitmq-static)
+target_link_libraries(consumer PRIVATE rabbitmq::rabbitmq-static)
 
 enable_testing()
 add_subdirectory(test)
