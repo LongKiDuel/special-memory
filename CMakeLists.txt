@@ -8,6 +8,8 @@ add_executable(main main.cpp)
 
 find_package(fmt CONFIG REQUIRED)
 target_link_libraries(main PRIVATE fmt::fmt)
+find_package(rabbitmq-c CONFIG REQUIRED)
+target_link_libraries(main PRIVATE rabbitmq::rabbitmq-static)
 
 enable_testing()
 add_subdirectory(test)
