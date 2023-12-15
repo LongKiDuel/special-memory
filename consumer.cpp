@@ -153,8 +153,13 @@ int main(int argc, char const *const *argv) {
   die_on_amqp_error(amqp_get_rpc_reply(conn), "Opening channel");
 
   {
-    amqp_queue_declare_ok_t *r = amqp_queue_declare(
-        conn, 1, amqp_empty_bytes, 0, 0, 0, 1, amqp_empty_table);
+    // from amqp_empty_bytes to amqp_cstring_bytes("task_queue")
+    // use named queue to make mesagge only send to one client in same queue.
+    //
+    // turn off queue auto delete.
+    amqp_queue_declare_ok_t *r =
+        amqp_queue_declare(conn, 1, amqp_cstring_bytes("task_queue"), 0, 1, 0,
+                           0, amqp_empty_table);
     die_on_amqp_error(amqp_get_rpc_reply(conn), "Declaring queue");
     queuename = amqp_bytes_malloc_dup(r->queue);
     if (queuename.bytes == NULL) {
