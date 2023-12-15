@@ -231,6 +231,14 @@ struct Queue_bind_info {
   Bytes bindingkey_name_{};
   Argument_table arguments_{};
 };
+struct Queue_consume_info {
+  Bytes queue_name_;
+  Bytes cosumer_tag_;
+  bool no_local_;
+  bool no_manually_ack_{};
+  bool exclusive_{};
+  Argument_table arguments_{};
+};
 class Connection {
 public:
   Connection(const Connection_info host_info) : socket_(connection_) {
@@ -271,6 +279,14 @@ public:
                     info.bindingkey_name_, info.arguments_.get_table());
     die_on_amqp_error(amqp_get_rpc_reply(get_connection_handle()),
                       "Binding queue");
+  }
+
+  void consume_queue(Channel &channel, const Queue_consume_info &info) {
+    amqp_basic_consume(get_connection_handle(), channel.get_channel_id(),
+                       info.queue_name_, info.cosumer_tag_, info.no_local_,
+                       info.no_manually_ack_, info.exclusive_,
+                       info.arguments_.get_table());
+    die_on_amqp_error(amqp_get_rpc_reply(get_connection_handle()), "Consuming");
   }
 
 private:
@@ -320,9 +336,10 @@ int main(int argc, char const *const *argv) {
   bind_info.bindingkey_name_ = bindingkey;
   connection.bind_queue(channel, bind_info);
 
-  amqp_basic_consume(conn, 1, queue.get_name(), amqp_empty_bytes, 0, 0, 0,
-                     amqp_empty_table);
-  die_on_amqp_error(amqp_get_rpc_reply(conn), "Consuming");
+  amqpp::Queue_consume_info consume_info{};
+  consume_info.queue_name_ = queue.get_name();
+
+  connection.consume_queue(channel, consume_info);
 
   run(conn);
 
