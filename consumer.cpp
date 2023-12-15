@@ -203,7 +203,11 @@ public:
     return bytes;
   }
 };
-class Argument_table {};
+class Argument_table {
+public:
+  amqp_table_t get_table() const { return amqp_empty_table; }
+  std::vector<amqp_table_entry_t> entries_;
+};
 class Queue {
 public:
   Queue(Bytes name) { queue_name_ = name; }
@@ -219,6 +223,13 @@ struct Queue_declare_info {
   bool durable_{};
   bool exclusive_{};
   bool auto_delete_{};
+  Argument_table arguments_{};
+};
+struct Queue_bind_info {
+  Bytes queue_name_{};
+  Bytes exchange_name_{};
+  Bytes bindingkey_name_{};
+  Argument_table arguments_{};
 };
 class Connection {
 public:
@@ -248,11 +259,18 @@ public:
     amqp_queue_declare_ok_t *r = amqp_queue_declare(
         get_connection_handle(), channel.get_channel_id(), info.queue_name,
         info.passive_, info.durable_, info.exclusive_, info.auto_delete_,
-        amqp_empty_table);
+        info.arguments_.get_table());
     die_on_amqp_error(amqp_get_rpc_reply(get_connection_handle()),
                       "Declaring queue");
     Bytes queue_name = r->queue;
     return Queue{queue_name};
+  }
+  void bind_queue(Channel &channel, const Queue_bind_info &info) {
+    amqp_queue_bind(get_connection_handle(), channel.get_channel_id(),
+                    info.queue_name_, info.exchange_name_,
+                    info.bindingkey_name_, info.arguments_.get_table());
+    die_on_amqp_error(amqp_get_rpc_reply(get_connection_handle()),
+                      "Binding queue");
   }
 
 private:
@@ -296,9 +314,11 @@ int main(int argc, char const *const *argv) {
     queue = connection.declare_queue(channel, info);
   }
 
-  amqp_queue_bind(conn, 1, queue.get_name(), amqp_cstring_bytes(exchange),
-                  amqp_cstring_bytes(bindingkey), amqp_empty_table);
-  die_on_amqp_error(amqp_get_rpc_reply(conn), "Binding queue");
+  amqpp::Queue_bind_info bind_info{};
+  bind_info.queue_name_ = queue.get_name();
+  bind_info.exchange_name_ = exchange;
+  bind_info.bindingkey_name_ = bindingkey;
+  connection.bind_queue(channel, bind_info);
 
   amqp_basic_consume(conn, 1, queue.get_name(), amqp_empty_bytes, 0, 0, 0,
                      amqp_empty_table);
