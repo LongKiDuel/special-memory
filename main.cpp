@@ -6,6 +6,7 @@
 #include <memory>
 #include <queue>
 #include <string>
+#include <utility>
 #include <vector>
 class Actor;
 class Actor_system;
@@ -21,8 +22,9 @@ public:
   void add_message(Message newMessage);
 
   uint64_t create_id() { return id_base_++; }
-  template <typename T = Actor> std::shared_ptr<T> create_actor() {
-    auto actor = std::make_shared<T>(*this);
+  template <typename T = Actor, typename... Args>
+  std::shared_ptr<T> create_actor(Args... args) {
+    auto actor = std::make_shared<T>(*this, args...);
     actors_.push_back(actor);
     return actor;
   }
@@ -78,12 +80,23 @@ void Actor_system::add_message(Message newMessage) {
     message_queue_.pop(); // not remove the message immediately.
   }
 }
+class Powerful_actor : public Actor {
+public:
+  Powerful_actor(Actor_system &system, int power) : Actor(system) {
+    power_ = power;
+  }
+  void receive_impl(Message meg) override {
+    meg.body_ = std::to_string(std::stoi(meg.body_) - 1 + power_);
+    Actor::receive_impl(meg);
+  }
+  int power_{};
+};
 
 int main() {
-
   Actor_system system;
   std::vector<std::shared_ptr<Actor>> actors;
-  for (int i = 0; i < 10; i++) {
+  for (int i = 0; i < 5; i++) {
+    actors.push_back(system.create_actor<Powerful_actor>(i));
     actors.push_back(system.create_actor());
   }
 
