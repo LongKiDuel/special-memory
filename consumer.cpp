@@ -1,6 +1,7 @@
 // Copyright 2007 - 2021, Alan Antonuk and the rabbitmq-c contributors.
 // SPDX-License-Identifier: mit
 
+#include <cstdint>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,6 +11,7 @@
 #include <amqp_tcp_socket.h>
 
 #include <assert.h>
+#include <string>
 
 #include "utils.h"
 
@@ -114,6 +116,41 @@ static void run(amqp_connection_state_t conn) {
     received++;
   }
 }
+namespace amqpp {
+struct Connection_info {
+  std::string hostname_;
+  uint16_t port_;
+};
+} // namespace amqpp
+namespace amqpp::raii {
+struct Connection {
+  Connection() : connection_(amqp_new_connection()) {}
+  ~Connection() {}
+  amqp_connection_state_t connection_{};
+};
+struct Socket {
+  amqp_socket_t *socket_{};
+
+  Socket(Connection &connection) {
+    socket_ = amqp_tcp_socket_new(connection.connection_);
+    assert(socket_);
+    if (!socket_) {
+      die("creating TCP socket");
+    }
+  }
+  ~Socket() {}
+
+  void connection_to(const Connection_info &destination) {
+    auto error = amqp_socket_open(socket_, destination.hostname_.c_str(),
+                                  destination.port_);
+    assert(!error);
+    if (error) {
+      die("opening TCP socket");
+    }
+  }
+};
+} // namespace amqpp::raii
+namespace amqpp {}
 
 int main(int argc, char const *const *argv) {
   char const *hostname;
@@ -135,17 +172,13 @@ int main(int argc, char const *const *argv) {
   exchange = "amq.direct";   /* argv[3]; */
   bindingkey = "test queue"; /* argv[4]; */
 
-  conn = amqp_new_connection();
+  amqpp::raii::Connection connection;
+  conn = connection.connection_;
 
-  socket = amqp_tcp_socket_new(conn);
-  if (!socket) {
-    die("creating TCP socket");
-  }
+  amqpp::raii::Socket queue_socket{connection};
+  queue_socket.connection_to({hostname, static_cast<uint16_t>(port)});
 
-  status = amqp_socket_open(socket, hostname, port);
-  if (status) {
-    die("opening TCP socket");
-  }
+  socket = queue_socket.socket_;
 
   die_on_amqp_error(amqp_login(conn, "/", 0, 131072, 0, AMQP_SASL_METHOD_PLAIN,
                                "guest", "guest"),
