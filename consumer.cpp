@@ -12,6 +12,7 @@
 
 #include <assert.h>
 #include <string>
+#include <vector>
 
 #include "utils.h"
 
@@ -167,6 +168,58 @@ Login_info get_default_login_info() {
   info.password_ = "guest";
   return info;
 }
+class Connection;
+class Channel {
+public:
+  int get_channel_id() { return channel_id_; }
+
+private:
+  Channel(int channel_id) : channel_id_(channel_id) {}
+  friend class Connection;
+  int channel_id_{};
+};
+class Bytes : std::vector<char> {
+  using Base = std::vector<char>;
+
+public:
+  Bytes() = default;
+  Bytes(const std::string &str) : Base{str.begin(), str.end()} {}
+  Bytes(const char *str) : Bytes{std::string(str)} {}
+  Bytes(std::vector<char> buffer) : Base{std::move(buffer)} {}
+  Bytes(amqp_bytes_t buffer)
+      : Base{reinterpret_cast<const char *>(buffer.bytes),
+             reinterpret_cast<const char *>(buffer.bytes) + buffer.len} {}
+
+  operator amqp_bytes_t() {
+    amqp_bytes_t bytes;
+    bytes.bytes = data();
+    bytes.len = size();
+    return bytes;
+  }
+  operator amqp_bytes_t() const {
+    amqp_bytes_t bytes;
+    bytes.bytes = const_cast<char *>(data());
+    bytes.len = size();
+    return bytes;
+  }
+};
+class Argument_table {};
+class Queue {
+public:
+  Queue(Bytes name) { queue_name_ = name; }
+  Queue() {}
+  const Bytes &get_name() const { return queue_name_; }
+
+private:
+  Bytes queue_name_{};
+};
+struct Queue_declare_info {
+  Bytes queue_name; // keep it empty will generate a queue with random name?
+  bool passive_{};
+  bool durable_{};
+  bool exclusive_{};
+  bool auto_delete_{};
+};
 class Connection {
 public:
   Connection(const Connection_info host_info) : socket_(connection_) {
@@ -183,9 +236,29 @@ public:
     die_on_amqp_error(result, "Logging in");
   }
 
+  Channel create_channel() {
+    auto cid = new_channel_id_generator++;
+    amqp_channel_open(get_connection_handle(), cid);
+    die_on_amqp_error(amqp_get_rpc_reply(get_connection_handle()),
+                      "Opening channel");
+    return Channel(cid);
+  }
+
+  Queue declare_queue(Channel &channel, const Queue_declare_info &info) {
+    amqp_queue_declare_ok_t *r = amqp_queue_declare(
+        get_connection_handle(), channel.get_channel_id(), info.queue_name,
+        info.passive_, info.durable_, info.exclusive_, info.auto_delete_,
+        amqp_empty_table);
+    die_on_amqp_error(amqp_get_rpc_reply(get_connection_handle()),
+                      "Declaring queue");
+    Bytes queue_name = r->queue;
+    return Queue{queue_name};
+  }
+
 private:
   raii::Connection connection_{};
   raii::Socket socket_;
+  int new_channel_id_generator{1}; // create channel start from 1.
 };
 } // namespace amqpp
 
@@ -193,8 +266,6 @@ int main(int argc, char const *const *argv) {
 
   char const *exchange;
   char const *bindingkey;
-
-  amqp_bytes_t queuename;
 
   if (argc < 3) {
     fprintf(stderr, "Usage: amqp_consumer host port\n");
@@ -212,36 +283,28 @@ int main(int argc, char const *const *argv) {
   amqp_connection_state_t conn = connection.get_connection_handle();
   connection.login(amqpp::get_default_login_info());
 
-  amqp_channel_open(conn, 1);
-  die_on_amqp_error(amqp_get_rpc_reply(conn), "Opening channel");
-
+  auto channel = connection.create_channel();
+  amqpp::Queue queue;
   {
     // from amqp_empty_bytes to amqp_cstring_bytes("task_queue")
     // use named queue to make mesagge only send to one client in same queue.
     //
     // turn off queue auto delete.
-    amqp_queue_declare_ok_t *r =
-        amqp_queue_declare(conn, 1, amqp_cstring_bytes("task_queue"), 0, 1, 0,
-                           0, amqp_empty_table);
-    die_on_amqp_error(amqp_get_rpc_reply(conn), "Declaring queue");
-    queuename = amqp_bytes_malloc_dup(r->queue);
-    if (queuename.bytes == NULL) {
-      fprintf(stderr, "Out of memory while copying queue name");
-      return 1;
-    }
+    amqpp::Queue_declare_info info{};
+    info.durable_ = true;
+    info.queue_name = "task_queue";
+    queue = connection.declare_queue(channel, info);
   }
 
-  amqp_queue_bind(conn, 1, queuename, amqp_cstring_bytes(exchange),
+  amqp_queue_bind(conn, 1, queue.get_name(), amqp_cstring_bytes(exchange),
                   amqp_cstring_bytes(bindingkey), amqp_empty_table);
   die_on_amqp_error(amqp_get_rpc_reply(conn), "Binding queue");
 
-  amqp_basic_consume(conn, 1, queuename, amqp_empty_bytes, 0, 0, 0,
+  amqp_basic_consume(conn, 1, queue.get_name(), amqp_empty_bytes, 0, 0, 0,
                      amqp_empty_table);
   die_on_amqp_error(amqp_get_rpc_reply(conn), "Consuming");
 
   run(conn);
-
-  amqp_bytes_free(queuename);
 
   die_on_amqp_error(amqp_channel_close(conn, 1, AMQP_REPLY_SUCCESS),
                     "Closing channel");
