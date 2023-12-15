@@ -8,6 +8,8 @@
 #include <string>
 #include <vector>
 class Actor;
+class Actor_system;
+
 struct Message {
   uint64_t src_id_;
   uint64_t dest_id_;
@@ -18,34 +20,27 @@ public:
   Actor_system() {}
   void add_message(Message newMessage);
 
-  std::queue<Message> message_queue_;
-  std::vector<std::shared_ptr<Actor>> actors_;
-
-  static uint64_t create_id() {
-    static uint64_t id{};
-    return id++;
-  }
-};
-Actor_system static_system;
-
-class Actor_factory {
-public:
-  template <typename T = Actor> static std::shared_ptr<T> create() {
-    auto actor = std::make_shared<T>();
-    static_system.actors_.push_back(actor);
+  uint64_t create_id() { return id_base_++; }
+  template <typename T = Actor> std::shared_ptr<T> create_actor() {
+    auto actor = std::make_shared<T>(*this);
+    actors_.push_back(actor);
     return actor;
   }
+
+private:
+  std::vector<std::shared_ptr<Actor>> actors_;
+  std::queue<Message> message_queue_;
+  uint64_t id_base_{};
 };
 
 class Actor {
-
 public:
-  Actor() {}
+  Actor(Actor_system &system) : system_(&system), id_{system.create_id()} {}
 
   uint64_t get_id() const { return id_; }
   void send(uint64_t id, std::string body) {
     auto message = send_impl(id, body);
-    static_system.add_message(message);
+    system_->add_message(message);
   }
   void receive(Message message) { receive_impl(message); }
 
@@ -66,7 +61,8 @@ protected:
   }
 
 private:
-  uint64_t id_{Actor_system::create_id()};
+  Actor_system *system_;
+  uint64_t id_{};
 };
 
 void Actor_system::add_message(Message newMessage) {
@@ -84,9 +80,11 @@ void Actor_system::add_message(Message newMessage) {
 }
 
 int main() {
+
+  Actor_system system;
   std::vector<std::shared_ptr<Actor>> actors;
   for (int i = 0; i < 10; i++) {
-    actors.push_back(Actor_factory::create());
+    actors.push_back(system.create_actor());
   }
 
   actors[0]->send(4, "0");
