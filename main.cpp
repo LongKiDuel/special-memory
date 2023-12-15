@@ -26,16 +26,16 @@ static void send_batch(amqp_connection_state_t conn, char const *queue_name,
   int previous_sent = 0;
   uint64_t previous_report_time = start_time;
   uint64_t next_summary_time = start_time + SUMMARY_EVERY_US;
-
-  char message[256];
+  std::vector<char> buffer{};
+  buffer.resize(1024);
   amqp_bytes_t message_bytes;
 
-  for (i = 0; i < (int)sizeof(message); i++) {
-    message[i] = i & 0xff;
+  for (i = 0; i < (int)sizeof(buffer.size()); i++) {
+    buffer[i] = i & 0xff;
   }
 
-  message_bytes.len = sizeof(message);
-  message_bytes.bytes = message;
+  message_bytes.len = buffer.size();
+  message_bytes.bytes = buffer.data();
 
   for (i = 0; i < message_count; i++) {
     uint64_t now = now_microseconds();
