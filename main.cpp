@@ -54,11 +54,15 @@ protected:
     return Message{get_id(), id, std::move(body)};
   }
   virtual void receive_impl(Message message) {
+    auto number = std::stoi(message.body_);
     std::cout << fmt::format("{} -> {}: {}\n", message.src_id_,
-                             message.dest_id_, message.body_);
+                             message.dest_id_, number);
+    if (number >= 1000) {
+      return;
+    }
     auto next_id = get_id() + 1;
     next_id %= 10;
-    send(next_id, message.body_);
+    send(next_id, std::to_string(number + 1));
   }
 
 private:
@@ -85,5 +89,5 @@ int main() {
     actors.push_back(Actor_factory::create());
   }
 
-  actors[0]->send(4, "Hello");
+  actors[0]->send(4, "0");
 }
