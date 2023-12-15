@@ -150,15 +150,49 @@ struct Socket {
   }
 };
 } // namespace amqpp::raii
-namespace amqpp {}
+namespace amqpp {
+struct Login_info {
+  std::string virtual_host{};
+  int max_channel_{}; // 0 for no limit.
+  int max_frame_size_{AMQP_DEFAULT_FRAME_SIZE};
+  int heartbeat_every_x_secones_{}; // 0 for no heartbeat
+  amqp_sasl_method_enum auth_method{AMQP_SASL_METHOD_PLAIN};
+  std::string user_name_;
+  std::string password_;
+};
+Login_info get_default_login_info() {
+  Login_info info;
+  info.virtual_host = "/";
+  info.user_name_ = "guest";
+  info.password_ = "guest";
+  return info;
+}
+class Connection {
+public:
+  Connection(const Connection_info host_info) : socket_(connection_) {
+    socket_.connection_to(host_info);
+  }
+
+  auto get_connection_handle() { return connection_.connection_; }
+
+  auto login(const Login_info &info) {
+    auto result = amqp_login(get_connection_handle(), info.virtual_host.c_str(),
+                             info.max_channel_, info.max_frame_size_,
+                             info.heartbeat_every_x_secones_, info.auth_method,
+                             info.user_name_.c_str(), info.password_.c_str());
+    die_on_amqp_error(result, "Logging in");
+  }
+
+private:
+  raii::Connection connection_{};
+  raii::Socket socket_;
+};
+} // namespace amqpp
 
 int main(int argc, char const *const *argv) {
-  char const *hostname;
-  int port, status;
+
   char const *exchange;
   char const *bindingkey;
-  amqp_socket_t *socket = NULL;
-  amqp_connection_state_t conn;
 
   amqp_bytes_t queuename;
 
@@ -166,23 +200,18 @@ int main(int argc, char const *const *argv) {
     fprintf(stderr, "Usage: amqp_consumer host port\n");
     return 1;
   }
-
-  hostname = argv[1];
-  port = atoi(argv[2]);
+  amqpp::Connection_info connection_info{};
+  {
+    connection_info.hostname_ = argv[1];
+    connection_info.port_ = atoi(argv[2]);
+  }
   exchange = "amq.direct";   /* argv[3]; */
   bindingkey = "test queue"; /* argv[4]; */
+  amqpp::Connection connection{connection_info};
 
-  amqpp::raii::Connection connection;
-  conn = connection.connection_;
+  amqp_connection_state_t conn = connection.get_connection_handle();
+  connection.login(amqpp::get_default_login_info());
 
-  amqpp::raii::Socket queue_socket{connection};
-  queue_socket.connection_to({hostname, static_cast<uint16_t>(port)});
-
-  socket = queue_socket.socket_;
-
-  die_on_amqp_error(amqp_login(conn, "/", 0, 131072, 0, AMQP_SASL_METHOD_PLAIN,
-                               "guest", "guest"),
-                    "Logging in");
   amqp_channel_open(conn, 1);
   die_on_amqp_error(amqp_get_rpc_reply(conn), "Opening channel");
 
