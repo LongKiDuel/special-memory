@@ -74,7 +74,12 @@ public:
     glm::mat4 m{vec[0], vec[1], vec[2], vec[3]};
     return m;
   }
-  glm::quat get_quat() const { return orbit1_ * t + (1 - t) * orbit2_; }
+  glm::quat get_quat() const {
+    // return orbit1_ * t + (1 - t) * orbit2_;
+    float co1 = std::sin(1 - t) / std::sin(t);
+    float co2 = std::sin(t) / std::sin(t);
+    return co1 * orbit1_ + co2 * orbit2_;
+  }
   void draw() {
     t += 0.01;
     if (t > 1) {
