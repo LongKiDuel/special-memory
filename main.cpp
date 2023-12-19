@@ -1,3 +1,4 @@
+#include <array>
 #include <deque>
 #include <glm/ext/matrix_clip_space.hpp>
 #include <optional>
@@ -59,6 +60,40 @@ void draw_mat(std::string name, const glm::mat4 &mat) {
   }
 }
 #include <glm/gtx/quaternion.hpp>
+class Quat_rotate_matrix : public Matrix_unit {
+public:
+  glm::mat4 get_mat() const {
+    std::array<glm::vec4, 4> vec{};
+    for (int i = 0; i < 3; i++) {
+      glm::vec3 origin = {};
+      origin[i] = 1;
+      auto new_dir = glm::normalize(glm::rotate(get_quat(), origin));
+      vec[i] = {new_dir, 0};
+    }
+    vec[3][3] = 1;
+    glm::mat4 m{vec[0], vec[1], vec[2], vec[3]};
+    return m;
+  }
+  glm::quat get_quat() const { return orbit1_ * t + (1 - t) * orbit2_; }
+  void draw() {
+    t += 0.01;
+    if (t > 1) {
+      t = 0;
+    }
+    ImGui::Text("Time: %f", t);
+    ImGui::DragFloat4("quater 1", &orbit1_.x);
+    ImGui::DragFloat4("quater 2", &orbit2_.x);
+  }
+
+  const std::string &name() const {
+    static std::string str = "Quat rotate";
+    return str;
+  }
+
+  glm::quat orbit1_{1, 1, 1, 1};
+  glm::quat orbit2_{1, 0, 1, 1};
+  float t{};
+};
 class Camera_matrix : public Matrix_unit {
 public:
   glm::mat4 get_mat() const {
@@ -193,6 +228,7 @@ void paint() {
           "move", glm::translate(glm::mat4{1}, glm::vec3{10, 20, 30}));
 
       // system.append(move);
+      system.append(std::make_shared<Quat_rotate_matrix>());
     }
     {
       system.append(std::make_shared<Camera_matrix>());
