@@ -8,10 +8,12 @@
         "benchmark",
         "vulkan",
         {
-            "name":"imgui",
+            "name": "imgui",
             "features": [
-                "glfw-binding", "vulkan-binding"
+                "glfw-binding",
+                "vulkan-binding"
             ]
-        }
+        },
+        "glm"
     ]
 }
