@@ -1,4 +1,5 @@
 #include <deque>
+#include <glm/ext/matrix_clip_space.hpp>
 #include <optional>
 #define IMGUI_DEFINE_MATH_OPERATORS
 ///
@@ -57,6 +58,55 @@ void draw_mat(std::string name, const glm::mat4 &mat) {
     ImGui::EndTable();
   }
 }
+#include <glm/gtx/quaternion.hpp>
+class Camera_matrix : public Matrix_unit {
+public:
+  glm::mat4 get_mat() const {
+    return glm::lookAt(get_position(), center_, up_);
+  }
+  glm::vec3 get_position() const {
+    auto dir = glm::rotate(orbit_, {0, 1, 0});
+    dir = glm::normalize(dir);
+    return center_ + dir * distance_;
+  }
+  void draw() {
+    ImGui::DragFloat4("quater", &orbit_.x);
+    ImGui::DragFloat("distance", &distance_);
+    auto pos = get_position();
+    ImGui::Text("Position: (%f %f %f)", pos.x, pos.y, pos.z);
+  }
+
+  const std::string &name() const {
+    static std::string str = "Camera";
+    return str;
+  }
+
+  glm::quat orbit_{1, 1, 1, 1};
+  glm::vec3 center_{};
+  float distance_{10};
+  glm::vec3 up_{0, 1, 0};
+};
+class Project_matrix : public Matrix_unit {
+public:
+  Project_matrix() { update(); }
+  glm::mat4 get_mat() const {
+    return glm::perspectiveFovRH_ZO<float>(fov_, width_, height_, 0.01, 1000);
+  }
+
+  const std::string &name() const {
+    static std::string str = "Project";
+    return str;
+  }
+  void draw() { update(); }
+  void update() {
+    auto frame_size = ImGui::GetMainViewport()->Size;
+    width_ = frame_size.x;
+    height_ = frame_size.y;
+  }
+  float fov_{glm::radians(45.f)};
+  float width_{};
+  float height_{};
+};
 
 class Matrix_system {
 public:
@@ -87,6 +137,13 @@ public:
   glm::mat4 get_current_mat() {
     glm::mat4 result{1};
     for (int i = matrices_.size() - 1; i >= current_index_; i--) {
+      result = matrices_[i]->get_mat() * result;
+    }
+    return result;
+  }
+  glm::mat4 get_final_mat() {
+    glm::mat4 result{1};
+    for (int i = matrices_.size() - 1; i >= 0; i--) {
       result = matrices_[i]->get_mat() * result;
     }
     return result;
@@ -137,17 +194,18 @@ void paint() {
 
       // system.append(move);
     }
+    {
+      system.append(std::make_shared<Camera_matrix>());
+      system.append(std::make_shared<Project_matrix>());
+    }
     return true;
   }();
   ImGuizmo::BeginFrame();
-  static auto view = glm::lookAtRH(glm::vec3{10, 10, 10}, {}, {0, 1, 0});
-  static auto projection = glm::perspectiveFovRH_ZO(
-      1.f, ImGui::GetMainViewport()->Size.x, ImGui::GetMainViewport()->Size.y,
-      0.001f, 1000.f);
+
   static glm::mat4 mat;
-  mat = system.get_current_mat();
-  ImGuizmo::ViewManipulate(&view[0][0], 10, {10, 10}, {300, 300}, 0);
-  draw_cube(projection * view * mat);
+  mat = system.get_final_mat();
+  // ImGuizmo::ViewManipulate(&view[0][0], 10, {10, 10}, {300, 300}, 0);
+  draw_cube(mat);
 
   system.draw();
 }
