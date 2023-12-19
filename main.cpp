@@ -23,7 +23,7 @@ void draw_movement(float ratio) {
   auto start = ImGui::GetWindowPos();
   auto width = ImGui::GetWindowWidth();
   auto height = ImGui::GetWindowHeight();
-  auto draw = ImGui::GetWindowDrawList();
+  auto draw = ImGui::GetForegroundDrawList();
 
   float h_ratio = 0.7;
   start.y += h_ratio * height;
@@ -48,12 +48,23 @@ void paint() {
         if (ImPlot::BeginPlot("My Plot")) {
           std::vector<float> x_axis{};
           std::vector<float> y_axis{};
-          const int count = 1000;
+          const int count = 1024; // 1024 to make / * stable
           for (int i = 0; i <= count; i++) {
             x_axis.push_back(i * 1.f / (count));
             y_axis.push_back(func(x_axis.back()));
           }
+          std::vector<float> speed_data;
+          for (int i = 0; i < count; i++) {
+            speed_data.push_back((y_axis[i + 1] - y_axis[i]) * count);
+          }
           ImPlot::PlotLine("My Line Plot", x_axis.data(), y_axis.data(), count);
+          ImPlot::EndPlot();
+
+          if (ImPlot::BeginPlot("Speed Plot")) {
+            ImPlot::PlotLine("move speed", x_axis.data(), speed_data.data(),
+                             count);
+            ImPlot::EndPlot();
+          }
 
           {
             auto t = ImGui::GetTime();
@@ -62,8 +73,6 @@ void paint() {
             auto ratio = y_axis[index];
             draw_movement(ratio);
           }
-
-          ImPlot::EndPlot();
         }
         ImGui::EndTabItem();
       }
