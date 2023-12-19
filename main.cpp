@@ -1,6 +1,7 @@
 #include <array>
 #include <deque>
 #include <glm/ext/matrix_clip_space.hpp>
+#include <glm/geometric.hpp>
 #include <optional>
 #define IMGUI_DEFINE_MATH_OPERATORS
 ///
@@ -88,6 +89,10 @@ public:
     ImGui::Text("Time: %f", t);
     ImGui::DragFloat4("quater 1", &orbit1_.x);
     ImGui::DragFloat4("quater 2", &orbit2_.x);
+    if (ImGui::Button("Nomalize")) {
+      orbit1_ = glm::normalize(orbit1_);
+      orbit2_ = glm::normalize(orbit2_);
+    }
   }
 
   const std::string &name() const {
