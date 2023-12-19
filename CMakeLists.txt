@@ -25,6 +25,8 @@ target_link_libraries(main PRIVATE fmt::fmt)
 target_link_libraries(main PRIVATE imguix)
 find_package(glm CONFIG REQUIRED)
 target_link_libraries(main PRIVATE glm::glm)
+find_package(imguizmo CONFIG REQUIRED)
+target_link_libraries(main PRIVATE imguizmo::imguizmo)
 
 enable_testing()
 add_subdirectory(test)

@@ -72,10 +72,8 @@ public:
         if (ImGui::BeginTabItem(mat->name().c_str())) {
           const auto mat4 = mat->get_mat();
           draw_mat("mat", mat4);
-          glm::mat4 result{1};
-          for (int i = matrices_.size() - 1; i >= index; i--) {
-            result = matrices_[i]->get_mat() * result;
-          }
+          current_index_ = index;
+          auto result = get_current_mat();
           draw_mat("result", result);
 
           mat->draw();
@@ -86,26 +84,70 @@ public:
       ImGui::EndTabBar();
     }
   }
+  glm::mat4 get_current_mat() {
+    glm::mat4 result{1};
+    for (int i = matrices_.size() - 1; i >= current_index_; i--) {
+      result = matrices_[i]->get_mat() * result;
+    }
+    return result;
+  }
 
 private:
   std::deque<std::shared_ptr<Matrix_unit>> matrices_;
+  int current_index_{};
 };
+#include <ImGuizmo.h>
+void draw_cube(glm::mat4 mvp) {
+  auto draw = ImGui::GetForegroundDrawList();
+  std::vector<glm::vec4> points = {
+      {1, 0, -1, 1},
+      {2, 0, 0, 1},
+      {1, 0, 1, 1},
+  };
+  std::vector<ImVec2> result_points;
+  auto frame_size = ImGui::GetMainViewport()->Size;
 
+  for (auto p : points) {
+    auto p2 = mvp * p;
+    p2 /= p2.w;
+    // ImGui::Text("[%f %f %f %f]", p2.x, p2.y, p2.z, p2.w);
+    p2 += 1.;
+    p2 /= 2;
+    p2.x *= frame_size.x;
+    p2.y *= frame_size.y;
+    // p2 /= p2.z;
+    result_points.push_back({p2.x, p2.y});
+    ImGui::Text("[%f %f %f %f]", p2.x, p2.y, p2.z, p2.w);
+  }
+  for (int i = 0; i + 3 <= result_points.size(); i += 3) {
+    draw->AddTriangleFilled(result_points[i], result_points[i + 1],
+                            result_points[i + 2], -1);
+  }
+}
 void paint() {
   static Matrix_system system;
   static bool b = []() {
     auto mat = std::make_shared<Plain_matrix>();
     mat->name_ = "basic";
-    mat->mat_ = glm::mat4{2};
+    mat->mat_ = glm::mat4{1};
     system.append(mat);
     {
       auto move = std::make_shared<Plain_matrix>(
           "move", glm::translate(glm::mat4{1}, glm::vec3{10, 20, 30}));
 
-      system.append(move);
+      // system.append(move);
     }
     return true;
   }();
+  ImGuizmo::BeginFrame();
+  static auto view = glm::lookAtRH(glm::vec3{10, 10, 10}, {}, {0, 1, 0});
+  static auto projection = glm::perspectiveFovRH_ZO(
+      1.f, ImGui::GetMainViewport()->Size.x, ImGui::GetMainViewport()->Size.y,
+      0.001f, 1000.f);
+  static glm::mat4 mat;
+  mat = system.get_current_mat();
+  ImGuizmo::ViewManipulate(&view[0][0], 10, {10, 10}, {300, 300}, 0);
+  draw_cube(projection * view * mat);
 
   system.draw();
 }
