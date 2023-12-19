@@ -37,7 +37,10 @@ void paint() {
       {"square", [](float x) { return x * x; }},
       {"cubic", [](float x) { return x * x * x; }},
       {"square root", [](float x) { return std::sqrt(x); }},
+      {"sinc", [](float x) { return std::sin(x); }},
   };
+  static float speed = 1.f;
+  ImGui::DragFloat("Speed", &speed);
 
   if (ImGui::BeginTabBar("Functions")) {
     for (auto [name, func] : functions) {
@@ -54,7 +57,7 @@ void paint() {
 
           {
             auto t = ImGui::GetTime();
-            uint64_t index = t * 1000;
+            uint64_t index = t * 1000 * speed;
             index %= count;
             auto ratio = y_axis[index];
             draw_movement(ratio);
