@@ -1,6 +1,8 @@
 #include <array>
 #include <deque>
 #include <glm/ext/matrix_clip_space.hpp>
+#include <glm/ext/vector_float3.hpp>
+#include <glm/ext/vector_float4.hpp>
 #include <glm/geometric.hpp>
 #include <optional>
 #define IMGUI_DEFINE_MATH_OPERATORS
@@ -226,6 +228,108 @@ void draw_cube(glm::mat4 mvp) {
                             result_points[i + 2], -1);
   }
 }
+namespace graphic_compute {
+class Plane {
+public:
+  Plane(glm::vec3 normal, float distance) : plane_vector_(normal, distance) {}
+
+  glm::vec3 normal() const { return glm::vec3{plane_vector_}; }
+  float distance() const { return plane_vector_.w; }
+
+  glm::vec4 vec4_form() const { return plane_vector_; }
+
+private:
+  glm::vec4 plane_vector_{};
+};
+class Line {
+public:
+  Line(glm::vec3 position, glm::vec3 direction)
+      : line_point_(position), direction_(glm::normalize(direction)) {}
+  glm::vec3 point() const { return line_point_; }
+  glm::vec3 direction() const { return direction_; }
+
+private:
+  glm::vec3 line_point_;
+  glm::vec3 direction_;
+};
+
+class Triangle {
+public:
+  Triangle(glm::vec3 p1, glm::vec3 p2, glm::vec3 p3) : points_{p1, p2, p3} {}
+  glm::vec3 center() const {
+    glm::vec3 p{};
+    for (auto &tp : points_) {
+      p += tp;
+    }
+    p /= 3;
+    return p;
+  }
+  glm::vec3 normal() const {
+    auto result = glm::normalize(
+        glm::cross(points_[1] - points_[0], points_[2] - points_[0]));
+    return result;
+  }
+
+  glm::vec3 operator[](int index) const { return points_[index]; }
+
+  glm::vec3 &operator[](int index) { return points_[index]; }
+
+private:
+  std::array<glm::vec3, 3> points_{};
+};
+
+Plane triangle_plane(const Triangle &triangle) {
+  auto normal = triangle.normal();
+  auto p0 = triangle[0];
+  auto distance = glm::dot(-normal, p0);
+  return Plane{normal, distance};
+}
+
+std::optional<float> intersect(const Line &line, const Plane &plane) {
+  auto line_dir = glm::vec4{line.direction(), 0};
+  auto line_pos = glm::vec4{line.point(), 1};
+
+  auto plane_vector = plane.vec4_form();
+
+  auto direction_dot = glm::dot(plane_vector, line_dir);
+  if (direction_dot == 0) {
+    return {};
+  }
+  auto distance = glm::dot(plane_vector, line_pos);
+  return -distance / direction_dot;
+}
+bool check_point_in_triangle(const glm::vec3 &point, const Triangle &triangle) {
+  // transform triangle[0] into origin.
+  auto q1 = triangle[1] - triangle[0];
+  auto q2 = triangle[2] - triangle[0];
+  auto r = point - triangle[0];
+  // barycentric coordinate.
+  std::array<float, 3> w{};
+  auto &w1 = w[1];
+  auto &w2 = w[2];
+  auto w0 = [&w1, &w2]() { return 1 - w1 - w2; };
+  // compute
+  auto dot_of_q1_q2 = glm::dot(q1, q2);
+  auto q1_square = glm::dot(q1, q1);
+  auto q2_square = glm::dot(q2, q2);
+
+  glm::vec2 coord = {glm::dot(r, q1), glm::dot(r, q2)};
+  glm::mat2 mat = {q2_square, -dot_of_q1_q2, -dot_of_q1_q2, q1_square};
+  float factor = 1 / (q1_square * q2_square - std::pow(dot_of_q1_q2, 2));
+  auto w1_w2_vec = factor * (mat * coord);
+  w1 = w1_w2_vec.x;
+  w2 = w1_w2_vec.y;
+  w[0] = w0();
+
+  for (auto v : w) {
+    if (v < 0 || v > 1) {
+      return false;
+    }
+  }
+  return true;
+}
+} // namespace graphic_compute
+
 void paint() {
   static Matrix_system system;
   static bool b = []() {
