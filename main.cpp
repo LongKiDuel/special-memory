@@ -50,8 +50,7 @@ public:
       window_flags |= ImGuiWindowFlags_NoMove;
     }
     ImGui::SetNextWindowBgAlpha(0.35f); // Transparent background
-    return open_ &&
-           ImGui::Begin("Example: Simple overlay", &open_, window_flags);
+    return open_ && ImGui::Begin(get_title().data(), &open_, window_flags);
   }
   void window_end() override {
     if (!closed_) {
@@ -96,20 +95,17 @@ public:
   int location{};
 };
 
-void paint() {
-  if (ImGui::Button("maxmize")) {
-    if (!ImGui::IsWindowDocked()) {
-      auto dock_id = ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
-      ImGui::SetNextWindowDockID(dock_id);
-    }
-  }
-}
+void paint() { ImGui::DockSpaceOverViewport(ImGui::GetMainViewport()); }
 int main() {
   auto app = ImGuiX::create_vulkan_app();
 
   // app->add_window(std::make_shared<Window_slot>("Table", table));
   app->add_window(std::make_shared<Window_slot>("Draw", paint));
-  app->add_window(std::make_shared<Window_overlay>("Draw", paint));
+  // app->add_window(std::make_shared<Window_overlay>("Draw overlay", paint));
 
+  app->add_window(std::make_shared<Window_slot>(
+      "Text", [] { ImGui::Text("Hello world"); }));
+  app->add_window(std::make_shared<Window_slot>(
+      "System", [] { ImGui::Text("42%% RAM used"); }));
   app->run();
 }
