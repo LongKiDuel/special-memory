@@ -379,6 +379,29 @@ glm::mat3 convariance_matrix(std::span<glm::vec3> points) {
   c33 /= size;
   return glm::mat3{c11, c12, c13, c12, c22, c23, c13, c23, c33};
 }
+class Sphere {
+public:
+  Sphere(glm::vec3 center, float radius) : center_(center), radius_(radius) {}
+  Sphere() {}
+  glm::vec3 center() const { return center_; }
+  float radius() { return radius_; }
+
+private:
+  glm::vec3 center_{};
+  float radius_{};
+};
+
+Sphere computer_bouding_sphere(std::span<const glm::vec3> points) {
+  if (points.empty()) {
+    return {};
+  }
+
+  for (const auto &point : points) {
+  }
+
+  return {};
+}
+
 } // namespace graphic_compute
 void draw_mat3(std::string name, glm::mat3 mat) {
   ImGui::Text("%s: ", name.c_str());
