@@ -497,6 +497,7 @@ public:
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     io.ConfigFlags |= ImGuiConfigFlags_DpiEnableScaleFonts;
     io.ConfigFlags |= ImGuiConfigFlags_DpiEnableScaleViewports;
+    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
@@ -519,7 +520,7 @@ public:
     init_info.Allocator = g_Allocator;
     init_info.CheckVkResultFn = check_vk_result;
     ImGui_ImplVulkan_Init(&init_info, wd->RenderPass);
-
+    io.ConfigFlags ^= ImGuiConfigFlags_ViewportsEnable;
     // Load Fonts
     // - If no fonts are loaded, dear imgui will use the default font. You can
     // also load multiple fonts and use ImGui::PushFont()/PopFont() to select
@@ -599,6 +600,9 @@ public:
       wd->ClearValue.color.float32[3] = clear_color.w;
       FrameRender(wd, draw_data);
       FramePresent(wd);
+      if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+        ImGui::UpdatePlatformWindows();
+      }
     }
   }
   bool should_stop() override { return glfwWindowShouldClose(window); }
