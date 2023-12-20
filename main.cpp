@@ -1,10 +1,13 @@
 #include <array>
+#include <cstdint>
 #include <deque>
 #include <glm/ext/matrix_clip_space.hpp>
+#include <glm/ext/matrix_float3x3.hpp>
 #include <glm/ext/vector_float3.hpp>
 #include <glm/ext/vector_float4.hpp>
 #include <glm/geometric.hpp>
 #include <optional>
+#include <span>
 #define IMGUI_DEFINE_MATH_OPERATORS
 ///
 #include "imguix/window.h"
@@ -328,8 +331,62 @@ bool check_point_in_triangle(const glm::vec3 &point, const Triangle &triangle) {
   }
   return true;
 }
-} // namespace graphic_compute
+template <typename T> struct Average_reducer {
+  void operator()(T value) {
+    sum += value;
+    count++;
+  }
+  T get_average() { return sum / count; }
+  T sum{};
+  int64_t count{};
+};
+glm::vec3 average(std::span<glm::vec3> points) {
+  if (points.empty()) {
+    throw std::runtime_error("The set of points is empty.");
+  }
 
+  glm::vec3 sum(0.0f, 0.0f, 0.0f);
+
+  for (const auto &point : points) {
+    sum += point;
+  }
+
+  return sum / static_cast<float>(points.size());
+}
+// for compute natural alignment, need other step to compute from this result.
+glm::mat3 convariance_matrix(std::span<glm::vec3> points) {
+  auto m = average(points);
+  float c11{}, c22{}, c33{}, c12{}, c13{}, c23{};
+  auto square = [](auto n) { return std::pow(n, 2); };
+  for (auto p : points) {
+
+    auto dx = p.x - m.x;
+    auto dy = p.y - m.y;
+    auto dz = p.z - m.z;
+    c11 += square(dx);
+    c22 += square(dy);
+    c33 += square(dz);
+    c12 += dx * dy;
+    c13 += dx * dz;
+    c23 += dy * dz;
+  }
+  auto size = points.size();
+  c11 /= size;
+  c12 /= size;
+  c13 /= size;
+  c22 /= size;
+  c23 /= size;
+  c33 /= size;
+  return glm::mat3{c11, c12, c13, c12, c22, c23, c13, c23, c33};
+}
+} // namespace graphic_compute
+void draw_mat3(std::string name, glm::mat3 mat) {
+  ImGui::Text("%s: ", name.c_str());
+  for (int i = 0; i < 3; i++) {
+    auto &m = mat[i];
+    ImGui::Text("[%f %f %f]", m[0], m[1], m[2]);
+  }
+}
 void paint() {
   static Matrix_system system;
   static bool b = []() {
@@ -358,6 +415,15 @@ void paint() {
   draw_cube(mat);
 
   system.draw();
+
+  std::vector<glm::vec3> poitns = {
+      {-1, -2, 1},
+      {1, 0, 2},
+      {2, -1, 3},
+      {2, -1, 2},
+  };
+  auto mat3 = graphic_compute::convariance_matrix(poitns);
+  draw_mat3("convariance", mat3);
 }
 int main() {
   auto app = ImGuiX::create_vulkan_app();
