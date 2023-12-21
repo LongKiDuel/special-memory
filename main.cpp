@@ -1,11 +1,16 @@
 #include <array>
 #include <cstdint>
 #include <deque>
+#include <fstream>
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/ext/matrix_float3x3.hpp>
+#include <glm/ext/matrix_float3x4.hpp>
+#include <glm/ext/matrix_float4x3.hpp>
 #include <glm/ext/vector_float3.hpp>
 #include <glm/ext/vector_float4.hpp>
 #include <glm/geometric.hpp>
+#include <glm/matrix.hpp>
+#include <iostream>
 #include <optional>
 #include <span>
 #define IMGUI_DEFINE_MATH_OPERATORS
@@ -401,7 +406,87 @@ Sphere computer_bouding_sphere(std::span<const glm::vec3> points) {
 
   return {};
 }
+class Polynominal {};
+class Cubic_curve {
+public:
+  Cubic_curve(glm::vec3 c0, glm::vec3 c1, glm::vec3 c2, glm::vec3 c3)
+      : cofactors_{c0, c1, c2, c3} {}
+  glm::vec3 operator()(float t) const {
+    auto mat = coeeficient_matrix();
+    glm::vec4 vec_t{1, t, t * t, t * t * t};
+    return mat * vec_t;
+  }
+  glm::mat3x4 coeeficient_matrix() const {
+    auto &c = cofactors_;
+    glm::mat4x3 mat_t{c[0], c[1], c[2], c[3]};
+    auto mat = glm::transpose(mat_t);
+    return mat;
+  }
 
+  glm::vec3 derivative(float t) const {
+    auto mat = coeeficient_matrix();
+    glm::vec4 vec_t{0, 1, 2 * t, 3 * t * t};
+    return mat * vec_t;
+  }
+
+private:
+  std::array<glm::vec3, 4> cofactors_{};
+};
+class Hermite_curve {
+  glm::vec3 operator()(float t) const { return {}; }
+
+private:
+  Line p1_;
+  Line p2_;
+};
+class Bezier_curve {
+public:
+  glm::vec3 operator()(float t) const { return {}; }
+};
+
+class Cubic_Bezier_curve {
+public:
+  Cubic_Bezier_curve(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, glm::vec3 p3)
+      : points_{p0, p1, p2, p3} {}
+  glm::vec3 operator()(float t) const {
+    auto dt = 1 - t;
+    auto &p = points_;
+    return p[0] * std::pow(dt, 3.f) + 3 * t * dt * dt * p[1] +
+           3 * t * t * dt * p[2] + std::pow(t, 3.f) * p[3];
+  }
+
+private:
+  std::array<glm::vec3, 4> points_{};
+};
+class NURBS {
+
+  int n() { return points_.size() - 1; }
+  int knot_count() { return n() + 4; }
+  int i_begin() { return 1; }
+  int i_end() { return n() - 2; }
+  // Cox-de Boor algorithm
+  float blending(int i, int k, float u) {
+    auto knot_n2 = get_knot(i - 2);
+    auto knot_n1 = get_knot(i - 1);
+
+    if (k == 0) {
+      if (u >= knot_n2 && u < knot_n1) {
+        return 1;
+      } else {
+        return 0;
+      }
+    }
+    auto linear_part1 =
+        (u - knot_n2) * blending(i, k - 1, u) / (get_knot(i + k - 2) - knot_n2);
+    auto linear_part2 = (get_knot(i + k - 1) - u) * blending(i + 1, k - 1, u) /
+                        (get_knot(i + k - 1) - knot_n1);
+    return linear_part1 + linear_part2;
+  }
+  float get_knot(int index) { return knots_[index + 2]; }
+  std::vector<glm::vec3> points_;
+  std::vector<float> knots_;
+  std::vector<float> weights_;
+};
 } // namespace graphic_compute
 void draw_mat3(std::string name, glm::mat3 mat) {
   ImGui::Text("%s: ", name.c_str());
@@ -448,6 +533,27 @@ void paint() {
   auto mat3 = graphic_compute::convariance_matrix(poitns);
   draw_mat3("convariance", mat3);
 }
+void ExportLineToObj(std::span<glm::vec3> line, const std::string &filename) {
+  std::ofstream file(filename);
+
+  if (!file.is_open()) {
+    std::cerr << "Failed to open file: " << filename << std::endl;
+    return;
+  }
+
+  // Write vertices
+  for (const auto &vertex : line) {
+    file << "v " << vertex.x << " " << vertex.y << " " << vertex.z << std::endl;
+  }
+
+  // If the line represents a polyline, you can optionally write lines (edges)
+  // for (size_t i = 0; i < line.size() - 1; ++i) {
+  //     file << "l " << (i + 1) << " " << (i + 2) << std::endl;
+  // }
+
+  file.close();
+}
+
 int main() {
   auto app = ImGuiX::create_vulkan_app();
 
