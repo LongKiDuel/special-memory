@@ -553,12 +553,25 @@ void ExportLineToObj(std::span<glm::vec3> line, const std::string &filename) {
 
   file.close();
 }
+glm::vec2 to_glm(ImVec2 vec) { return {vec.x, vec.y}; }
+glm::vec4 to_glm(ImVec4 vec) { return {vec.x, vec.y, vec.z, vec.w}; }
+ImVec2 to_imvec(glm::vec2 vec) { return {vec.x, vec.y}; }
+ImVec4 to_imvec(glm::vec4 vec) { return {vec.x, vec.y, vec.z, vec.w}; }
+void collision_test() {
+  auto pos = to_glm(ImGui::GetWindowPos());
+  auto size = to_glm(ImGui::GetWindowSize());
+
+  auto draw = ImGui::GetForegroundDrawList();
+  draw->AddRect(to_imvec(pos), to_imvec(pos + size), -1);
+  static graphic_compute::Sphere sphere({pos, 1}, 3.f);
+}
 
 int main() {
   auto app = ImGuiX::create_vulkan_app();
 
   // app->add_window(std::make_shared<Window_slot>("Table", table));
   app->add_window(std::make_shared<Window_slot>("Draw", paint));
+  app->add_window(std::make_shared<Window_slot>("Collision", collision_test));
 
   app->run();
 }
