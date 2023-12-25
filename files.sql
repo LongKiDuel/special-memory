@@ -16,6 +16,7 @@ CREATE TABLE file_changes (
     last_modify_time TIMESTAMP WITH TIME ZONE  NOT NULL,
     creation_time TIMESTAMP WITH TIME ZONE,
     file_hash TEXT,
+    hash_algorithm TEXT,
     change_type TEXT,
     user_info TEXT,
     file_type TEXT,
