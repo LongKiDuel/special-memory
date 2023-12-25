@@ -2,12 +2,15 @@ cmake_minimum_required(VERSION 3.23.0)
 project(main VERSION 0.1.0)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 17)
 
 add_executable(main main.cpp)
 
 find_package(fmt CONFIG REQUIRED)
 target_link_libraries(main PRIVATE fmt::fmt)
+
+find_package(libpqxx CONFIG REQUIRED)
+target_link_libraries(main PRIVATE libpqxx::pqxx)
 
 enable_testing()
 add_subdirectory(test)
