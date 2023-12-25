@@ -118,7 +118,13 @@ int main() {
           "last_modify_time, last_check_time) "
           "VALUES ({}, {}, {}, {}, now(), LOCALTIMESTAMP);",
           machine_id, "abx.txt", "/root/abx.txt", 523));
-      auto rows = w.exec(fmt::format("SELECT * from {};", "file_changes"));
+      // auto rows = w.exec(fmt::format("SELECT * from {};", "file_changes"));
+      auto rows = w.exec(
+          fmt::format(R"**(SELECT  m.name AS machine, f.filename, f.filepath
+FROM "file_changes" AS f
+
+INNER JOIN machines AS m
+ON m.id = f.machine_id)**"));
       int count{};
       for (auto r : rows) {
         if (count == 0) {
