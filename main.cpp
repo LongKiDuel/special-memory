@@ -1,6 +1,7 @@
 #include <array>
 #include <fmt/core.h>
 #include <fmt/format.h>
+#include <fstream>
 #include <iostream>
 #include <pqxx/pqxx>
 #include <string>
@@ -24,6 +25,12 @@ std::string format_sql(pqxx::work &work, std::string tmplate, Ts &&...data) {
   return fmt::vformat(tmplate, args);
 }
 
+std::string get_hostname() {
+  std::ifstream file{"/proc/sys/kernel/hostname"};
+  std::string name;
+  file >> name;
+  return name;
+}
 int main() {
   try {
     // Connect to the database.  In practice we may have to pass some
@@ -84,6 +91,20 @@ int main() {
     {
 
       pqxx::work w(c);
+      std::string hostname = get_hostname();
+      int machine_id{};
+      {
+        auto count = w.exec1(format_sql(
+            w, "SELECT count(*) FROM machines WHERE name = {};", hostname));
+        if (count[0].as<int>() == 0) {
+          w.exec0(format_sql(w, "INSERT INTO machines (name) VALUES ({});",
+                             hostname));
+        }
+
+        auto id = w.exec1(format_sql(
+            w, "SELECT id FROM machines WHERE name = {};", hostname));
+        machine_id = id[0].as<int>();
+      }
       // CURRENT_TIMESTAMP == now()
       w.exec0("SET TIMEZONE='America/Los_angeles';");
       std::cout << w.exec1("SELECT now() - interval '2 hours 30 minutes' AS "
@@ -91,11 +112,12 @@ int main() {
                        .get<std::string>()
                        .value()
                 << "\n";
-      w.exec(format_sql(w,
-                        "INSERT INTO file_changes (filename,filepath,filesize, "
-                        "last_modify_time, last_check_time) "
-                        "VALUES ({}, {}, {}, now(), LOCALTIMESTAMP);",
-                        "abx.txt", "/root/abx.txt", 523));
+      w.exec(format_sql(
+          w,
+          "INSERT INTO file_changes (machine_id, filename,filepath,filesize, "
+          "last_modify_time, last_check_time) "
+          "VALUES ({}, {}, {}, {}, now(), LOCALTIMESTAMP);",
+          machine_id, "abx.txt", "/root/abx.txt", 523));
       auto rows = w.exec(fmt::format("SELECT * from {};", "file_changes"));
       int count{};
       for (auto r : rows) {
