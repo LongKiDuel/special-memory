@@ -81,6 +81,40 @@ int main() {
       }
     }
 
+    {
+
+      pqxx::work w(c);
+      // CURRENT_TIMESTAMP == now()
+      w.exec0("SET TIMEZONE='America/Los_angeles';");
+      std::cout << w.exec1("SELECT now() - interval '2 hours 30 minutes' AS "
+                           "two_hour_30_min_go;")[0]
+                       .get<std::string>()
+                       .value()
+                << "\n";
+      w.exec(format_sql(w,
+                        "INSERT INTO file_changes (filename,filepath,filesize, "
+                        "last_modify_time, last_check_time) "
+                        "VALUES ({}, {}, {}, now(), LOCALTIMESTAMP);",
+                        "abx.txt", "/root/abx.txt", 523));
+      auto rows = w.exec(fmt::format("SELECT * from {};", "file_changes"));
+      int count{};
+      for (auto r : rows) {
+        if (count == 0) {
+          for (auto &&c : r) {
+            std::cout << c.name() << " ";
+          }
+          std::cout << "\n";
+        }
+
+        for (auto &&c : r) {
+          std::cout << c.c_str() << " ";
+        }
+        std::cout << "\n";
+        count++;
+      }
+      w.commit();
+    }
+
   } catch (std::exception const &e) {
     std::cerr << e.what() << std::endl;
     return 1;
