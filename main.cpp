@@ -1,14 +1,28 @@
+#include <array>
 #include <fmt/core.h>
 #include <fmt/format.h>
 #include <iostream>
 #include <pqxx/pqxx>
 #include <string>
 
-std::string format_sql(pqxx::work &work, std::string tmplate, int data) {
-  auto s = work.quote(data);
-  auto args = fmt::make_format_args(s);
+template <typename T, std::size_t... I>
+auto make_format_args_helper(const std::array<T, sizeof...(I)> &arr,
+                             std::index_sequence<I...>) {
+  return fmt::make_format_args(arr[I]...);
+}
+
+template <typename T, std::size_t N>
+auto make_format_args_sql(const std::array<T, N> &arr) {
+  return make_format_args_helper(arr, std::make_index_sequence<N>{});
+}
+template <typename... Ts>
+std::string format_sql(pqxx::work &work, std::string tmplate, Ts &&...data) {
+  std::array<std::string, sizeof...(data)> arr{
+      work.quote(std::forward<Ts>(data))...};
+  auto args = make_format_args_sql(arr);
   return fmt::vformat(tmplate, args);
 }
+
 int main() {
   try {
     // Connect to the database.  In practice we may have to pass some
@@ -37,7 +51,8 @@ int main() {
 
     {
       pqxx::work w(c);
-      pqxx::row r = w.exec1(format_sql(w, "SELECT {};", 42));
+
+      pqxx::row r = w.exec1(format_sql(w, "SELECT {}, {};", 42, 32));
       for (auto &&c : r) {
         std::cout << c.c_str() << " ";
       }
