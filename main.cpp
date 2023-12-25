@@ -16,6 +16,7 @@ auto make_format_args_sql(const std::array<T, N> &arr) {
   return make_format_args_helper(arr, std::make_index_sequence<N>{});
 }
 template <typename... Ts>
+// Only works for format values in sqlite.
 std::string format_sql(pqxx::work &work, std::string tmplate, Ts &&...data) {
   std::array<std::string, sizeof...(data)> arr{
       work.quote(std::forward<Ts>(data))...};
@@ -57,6 +58,27 @@ int main() {
         std::cout << c.c_str() << " ";
       }
       std::cout << "\n";
+    }
+    {
+      pqxx::work w(c);
+
+      auto rows =
+          w.exec(format_sql(w, "SELECT tablename from pg_catalog.pg_tables;"));
+      int count{};
+      for (auto r : rows) {
+        if (count == 0) {
+          for (auto &&c : r) {
+            std::cout << c.name() << " ";
+          }
+          std::cout << "\n";
+        }
+
+        for (auto &&c : r) {
+          std::cout << c.c_str() << " ";
+        }
+        std::cout << "\n";
+        count++;
+      }
     }
 
   } catch (std::exception const &e) {
