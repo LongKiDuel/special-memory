@@ -5,7 +5,7 @@
 #include <glm/ext/vector_float3.hpp>
 namespace data_stream {
 struct Triangle_ref {
-  std::array<glm::vec3 *, 3> a;
+  std::array<glm::vec3 *, 3> points_;
 };
 struct Triangle_stream {
   bool write(const Triangle_ref &tri) { return callback_(tri); }
