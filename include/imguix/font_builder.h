@@ -22,7 +22,7 @@ public:
     //   }
     // }
   }
-  void add(ImWchar *ranges) { builder_.AddRanges(ranges); }
+  void add(const ImWchar *ranges) { builder_.AddRanges(ranges); }
   void add(uint32_t character) { builder_.AddChar(character); }
 
   std::vector<ImWchar> get_range() {
