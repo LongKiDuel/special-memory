@@ -6,6 +6,13 @@
 #include <string>
 #include <vector>
 namespace ImGuiX {
+inline ImFontConfig default_font_config() {
+  ImFontConfig config{};
+  config.PixelSnapH = true;
+  config.OversampleH = 1;
+  config.OversampleV = 1;
+  return config;
+}
 struct Font_info {
   uint32_t size_{};
   std::string file_path_{};

@@ -69,7 +69,8 @@ ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
   ImGuiX::Font_info info{};
   info.file_path_ = *selected;
   info.ranges_ = builder.get_range();
-  info.size_ = 24;
+  info.size_ = 27;
+  info.config_ = ImGuiX::default_font_config();
   auto raii_handle = manage.raii_push(info);
   if (!manage.lookup(info)) {
     ImGuiX::details::build_queue.queue_.push_back(
