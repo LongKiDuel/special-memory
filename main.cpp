@@ -43,6 +43,9 @@ if (ImGui::Button(u8"ロード"))
 }
 ImGui::InputText("string", buf, IM_ARRAYSIZE(buf));
 ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
+人人有權享有生命
+人人生而自由
+發布掰個世界人權宣言
   )**";
   ImGuiX::Font_builder builder;
   builder.add(content);
