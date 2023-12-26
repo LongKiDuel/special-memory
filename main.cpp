@@ -49,6 +49,7 @@ ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
 국가간에 우호관계의
 인간은
 인간이 폭정과 억압에
+Whereas disregard and contempt for human rights have resulted
   )**";
   ImGuiX::Font_builder builder;
   builder.add(content);
