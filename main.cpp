@@ -76,8 +76,9 @@ Whereas disregard and contempt for human rights have resulted
   ImGuiX::Font_info info{};
   info.file_path_ = *selected;
   info.ranges_ = builder.get_range();
-  info.size_ = 27;
+  info.size_ = 32;
   info.config_ = ImGuiX::default_font_config();
+  // info.config_.RasterizerDensity = 2;
   auto raii_handle = manage.raii_push(info);
   if (!manage.lookup(info)) {
     ImGuiX::details::build_queue.queue_.push_back(
