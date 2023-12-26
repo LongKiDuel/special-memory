@@ -11,6 +11,7 @@
 #include <cmath>
 #include <functional>
 #include <imgui.h>
+#include <imgui_stdlib.h>
 #include <memory>
 #include <string>
 #include <vector>
@@ -53,9 +54,12 @@ Whereas disregard and contempt for human rights have resulted
   )**";
   ImGuiX::Font_builder builder;
   builder.add(content);
+  builder.add('?');
 
   static std::vector<std::string> fonts = get_font_files();
   static std::string *selected = fonts.data();
+  static std::string input;
+  builder.add(input);
   if (fonts.empty()) {
     ImGui::Text("No fonts");
     return;
@@ -85,6 +89,9 @@ Whereas disregard and contempt for human rights have resulted
         [info] { manage.build(info); });
   }
   ImGui::Text("%s", content.c_str());
+
+  ImGui::InputText("Input", &input);
+  ImGui::Text("%s", input.c_str());
 }
 int main() {
   auto app = ImGuiX::create_vulkan_app();
