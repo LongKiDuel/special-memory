@@ -26,6 +26,7 @@
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_vulkan.h"
+#include "imguix/font_build_queue.h"
 #include <stdio.h>  // printf, fprintf
 #include <stdlib.h> // abort
 #define GLFW_INCLUDE_NONE
@@ -595,6 +596,15 @@ public:
       wd->ClearValue.color.float32[3] = clear_color.w;
       FrameRender(wd, draw_data);
       FramePresent(wd);
+    }
+    if (!details::build_queue.queue_.empty()) {
+      for (auto &f : details::build_queue.queue_) {
+        f();
+      }
+      ImGui_ImplVulkan_DestroyFontsTexture();
+      ImGui::GetIO().Fonts->Build();
+      // build before clear the queue, keep font ranges data.
+      details::build_queue.queue_.clear();
     }
   }
   bool should_stop() override { return glfwWindowShouldClose(window); }
