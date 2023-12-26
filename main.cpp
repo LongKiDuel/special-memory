@@ -83,6 +83,7 @@ Whereas disregard and contempt for human rights have resulted
   info.size_ = 32;
   info.config_ = ImGuiX::default_font_config();
   // info.config_.RasterizerDensity = 2;
+  // info.config_.MergeMode = !manage.empty(); merge mode.
   auto raii_handle = manage.raii_push(info);
   if (!manage.lookup(info)) {
     ImGuiX::details::build_queue.queue_.push_back(
@@ -91,7 +92,7 @@ Whereas disregard and contempt for human rights have resulted
   ImGui::Text("%s", content.c_str());
 
   ImGui::InputText("Input", &input);
-  ImGui::Text("%s", input.c_str());
+  ImGui::TextWrapped("%s", input.c_str());
 }
 int main() {
   auto app = ImGuiX::create_vulkan_app();

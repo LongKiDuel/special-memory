@@ -82,6 +82,7 @@ public:
     }
     return font;
   }
+  bool empty() const { return fonts_.empty(); }
 
 private:
   std::vector<Font_data> fonts_{};
