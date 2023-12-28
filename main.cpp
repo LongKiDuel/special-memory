@@ -91,6 +91,8 @@ The code in imgui.cpp embeds a copy of 'ProggyClean.ttf' (by Tristan Grimmer), a
   static std::vector<std::string> fonts = get_font_files();
   static std::string *selected = fonts.data();
   static std::string input;
+  static int font_size = 32;
+
   builder.add(input);
 
   builder.add("MHP:/");
@@ -112,13 +114,21 @@ The code in imgui.cpp embeds a copy of 'ProggyClean.ttf' (by Tristan Grimmer), a
     selected =
         std::clamp(selected, fonts.data(), fonts.data() + fonts.size() - 1);
   }
+
   ImGuiX::Font_info info{};
   info.file_path_ = *selected;
   info.ranges_ = builder.get_range();
-  info.size_ = 32;
+  info.size_ = font_size;
   info.config_ = ImGuiX::default_font_config();
   // info.config_.RasterizerDensity = 2;
   // info.config_.MergeMode = !manage.empty(); merge mode.
+
+  ImGui::InputInt("Font size", &font_size);
+
+  if (ImGui::Button("Set to default")) {
+    auto font = manage.lookup(info);
+    ImGui::GetIO().FontDefault = font;
+  }
   auto raii_handle = manage.raii_push(info);
   if (!manage.lookup(info)) {
     ImGuiX::details::build_queue.queue_.push_back(
