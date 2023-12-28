@@ -124,6 +124,21 @@ The code in imgui.cpp embeds a copy of 'ProggyClean.ttf' (by Tristan Grimmer), a
   // info.config_.MergeMode = !manage.empty(); merge mode.
 
   ImGui::InputInt("Font size", &font_size);
+  if (ImGui::Button("Clean atlas")) {
+    ImGuiX::details::build_queue.queue_.push_back([info] {
+      auto &io = ImGui::GetIO();
+      io.Fonts->Clear();
+      // static ImFontAtlas *old{};
+      // if (old) {
+      //   std::swap(old, io.Fonts);
+      // } else {
+      //   old = io.Fonts;
+      //   io.Fonts = new ImFontAtlas;
+      // }
+      manage = {};
+      manage.build(info);
+    });
+  }
 
   if (ImGui::Button("Set to default")) {
     auto font = manage.lookup(info);
