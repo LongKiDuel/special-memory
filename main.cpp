@@ -23,6 +23,17 @@ public:
 };
 
 void paint() { ZoneScoped; }
+void compute() {
+  ZoneScoped;
+  static std::vector<int> numbers;
+  if (ImGui::Button("add")) {
+    numbers.push_back(numbers.size());
+  }
+  for (auto n : numbers) {
+    ImGui::Text("%d", n);
+    ImGui::SameLine();
+  }
+}
 int main() {
 #ifdef TRACY_ENABLE
   std::cout << "TRACY: " << TRACY_ENABLE << "\n";
@@ -31,6 +42,7 @@ int main() {
 
   // app->add_window(std::make_shared<Window_slot>("Table", table));
   app->add_window(std::make_shared<Window_slot>("Draw", paint));
+  app->add_window(std::make_shared<Window_slot>("Compute", compute));
 
   app->run();
 }
