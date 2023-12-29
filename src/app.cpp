@@ -2,6 +2,8 @@
 #include <imguix/app.h>
 #include <imguix/window.h>
 #include <memory>
+#include <tracy/Tracy.hpp>
+
 void ImGuiX::App::draw() {
   for (auto &w : windows) {
     w->run();
@@ -14,9 +16,12 @@ void ImGuiX::App::frame_end() {}
 bool ImGuiX::App::should_stop() { return false; }
 void ImGuiX::App::run() {
   while (!should_stop()) {
+    const char *frame_name = "APP Frame";
+    FrameMarkStart(frame_name);
     frame_begin();
     draw();
     frame_end();
+    FrameMarkEnd(frame_name);
   }
 }
 void ImGuiX::App::add_window(std::shared_ptr<Window> window) {

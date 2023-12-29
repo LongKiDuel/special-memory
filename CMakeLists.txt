@@ -27,6 +27,7 @@ find_package(Tracy CONFIG REQUIRED)
 target_link_libraries(main PRIVATE Tracy::TracyClient)
 
 # Enable tracy
+target_compile_definitions(imguix PUBLIC TRACY_ENABLE=1)
 target_compile_definitions(main PUBLIC TRACY_ENABLE=1)
 
 enable_testing()
