@@ -1,3 +1,6 @@
+#include <cstddef>
+#include <cstdio>
+#include <cstdlib>
 #include <iostream>
 #include <optional>
 #define IMGUI_DEFINE_MATH_OPERATORS
@@ -30,4 +33,21 @@ int main() {
   app->add_window(std::make_shared<Window_slot>("Draw", paint));
 
   app->run();
+}
+
+void *operator new(size_t size) {
+  auto pt = malloc(size);
+  TracyAlloc(pt, size);
+  // printf("%p %zu\n", pt, size);
+  return pt;
+}
+void operator delete(void *pt) noexcept {
+  // printf("%p od\n", pt);
+  TracyFree(pt);
+  free(pt);
+}
+void operator delete(void *pt, size_t size) noexcept {
+  // printf("%p d\n", pt);
+  TracyFree(pt);
+  free(pt);
 }
