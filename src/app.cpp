@@ -5,9 +5,13 @@
 #include <tracy/Tracy.hpp>
 
 void ImGuiX::App::draw() {
+  static const char *imgui_frame_name = "ImGui Frame";
+  FrameMarkStart(imgui_frame_name);
+
   for (auto &w : windows) {
     w->run();
   }
+  FrameMarkEnd(imgui_frame_name);
 }
 ImGuiX::App::~App() {}
 ImGuiX::App::App() {}
@@ -15,8 +19,8 @@ void ImGuiX::App::frame_begin() {}
 void ImGuiX::App::frame_end() {}
 bool ImGuiX::App::should_stop() { return false; }
 void ImGuiX::App::run() {
+  const char *frame_name = "APP Frame";
   while (!should_stop()) {
-    const char *frame_name = "APP Frame";
     FrameMarkStart(frame_name);
     frame_begin();
     draw();

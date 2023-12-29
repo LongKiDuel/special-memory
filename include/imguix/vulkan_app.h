@@ -50,6 +50,8 @@
 #define IMGUI_VULKAN_DEBUG_REPORT
 #endif
 
+#include <tracy/Tracy.hpp>
+#include <tracy/TracyVulkan.hpp>
 // Data
 static VkAllocationCallbacks *g_Allocator = nullptr;
 static VkInstance g_Instance = VK_NULL_HANDLE;
@@ -569,6 +571,7 @@ public:
         g_SwapChainRebuild = false;
       }
     }
+    // FrameMarkStart("Vulkan frame");
     // Start the Dear ImGui frame
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplGlfw_NewFrame();
@@ -596,6 +599,8 @@ public:
       FrameRender(wd, draw_data);
       FramePresent(wd);
     }
+    FrameMark;
+    // FrameMarkEnd("Vulkan frame");
   }
   bool should_stop() override { return glfwWindowShouldClose(window); }
 
