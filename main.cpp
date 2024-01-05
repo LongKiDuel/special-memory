@@ -1,3 +1,4 @@
+#include "image_exporter_stb.h"
 #include "image_exporter_webp.h"
 #include "image_loader.h"
 #include <fmt/core.h>
@@ -25,7 +26,7 @@ int main(int argc, char **argv) {
                            bitmap->width(), bitmap->height(),
                            bitmap->channel());
 
-  image_mix::Exporter_webp exporter;
+  image_mix::Exporter_stb_jpg exporter;
   std::string output_file_name =
       std::string{"output"} + exporter.common_extension();
   std::ofstream output{output_file_name, std::ios::binary};
