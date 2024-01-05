@@ -27,6 +27,7 @@ public:
       return {};
     }
     Bitmap bitmap{x, y, channel};
+    bitmap.memcpy(buffer);
     stbi_image_free(buffer);
 
     return bitmap;

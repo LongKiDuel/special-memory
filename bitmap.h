@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <cstddef>
+#include <cstring>
 #include <vector>
 namespace image_mix {
 struct Bitmap_info {
@@ -24,6 +25,9 @@ public:
   int width() const { return info_.width_; }
   int height() const { return info_.height_; }
   int channel() const { return info_.channel_; }
+
+  // copy from same sized buffer.
+  void memcpy(void *data) { ::memcpy(buffer_.data(), data, buffer_.size()); }
 
 private:
   std::size_t get_row_size(int width, int channel, int bits) {
