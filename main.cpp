@@ -1,5 +1,7 @@
+#include "image_exporter_webp.h"
 #include "image_loader.h"
 #include <fmt/core.h>
+#include <fstream>
 #include <iostream>
 #include <string>
 int main(int argc, char **argv) {
@@ -22,4 +24,12 @@ int main(int argc, char **argv) {
   std::cout << fmt::format("width: {} height: {} channel: {}\n",
                            bitmap->width(), bitmap->height(),
                            bitmap->channel());
+
+  image_mix::Exporter_webp exporter;
+  std::string output_file_name =
+      std::string{"output"} + exporter.common_extension();
+  std::ofstream output{output_file_name, std::ios::binary};
+  auto image_encoded = exporter.export_to_buffer(*bitmap).value();
+  output.write(reinterpret_cast<char *>(image_encoded.data()),
+               image_encoded.size());
 }
