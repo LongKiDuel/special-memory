@@ -32,4 +32,6 @@ public:
 private:
   std::vector<std::unique_ptr<Loader>> loaders_;
 };
+
+std::unique_ptr<Loader> get_default_loader();
 } // namespace image_mix

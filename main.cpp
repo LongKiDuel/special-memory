@@ -10,9 +10,9 @@ int main(int argc, char **argv) {
   }
   std::string file = argv[1];
 
-  image_mix::Loader_set loader;
+  auto loader = image_mix::get_default_loader();
 
-  auto bitmap = loader.load(file);
+  auto bitmap = loader->load(file);
   if (!bitmap) {
     std::cout << "Failed to load bitmap from: " << file << "\n";
     return 2;
