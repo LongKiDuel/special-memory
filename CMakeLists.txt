@@ -9,6 +9,9 @@ add_executable(main main.cpp)
 
 find_package(Stb REQUIRED)
 target_include_directories(image_mix PRIVATE ${Stb_INCLUDE_DIR})
+find_package(WebP CONFIG REQUIRED)
+# basic usage
+target_link_libraries(image_mix PRIVATE WebP::webp WebP::webpdecoder WebP::webpdemux)
 
 
 find_package(fmt CONFIG REQUIRED)

@@ -1,0 +1,29 @@
+#pragma once
+
+#include "bitmap.h"
+#include "image_loader.h"
+#include <cstdio>
+
+namespace image_mix {
+class Loader_webp : public Loader {
+public:
+  std::optional<Bitmap> load(const std::string &file_path) {
+    auto file_ptr = fopen(file_path.c_str(), "rb");
+    if (!file_ptr) {
+      // failed to open file.
+      return {};
+    }
+    int x{};
+    int y{};
+    int channel{};
+
+    Bitmap bitmap{x, y, channel};
+
+    return bitmap;
+  }
+
+  virtual std::string name() const { return "webp"; }
+
+private:
+};
+} // namespace image_mix
