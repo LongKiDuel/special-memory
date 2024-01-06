@@ -33,4 +33,40 @@ public:
   std::string common_extension() const { return ".jpg"; }
   std::optional<int> quality_factor_;
 };
+class Exporter_stb_png : public Exporter {
+public:
+  std::optional<std::vector<uint8_t>> export_to_buffer(const Bitmap &bitmap) {
+    std::vector<uint8_t> buffer_vector{};
+    auto write_back = [](void *context, void *data, int size) {
+      auto buffer = reinterpret_cast<std::vector<uint8_t> *>(context);
+      auto data_u8 = reinterpret_cast<uint8_t *>(data);
+      buffer->insert(buffer->end(), data_u8, data_u8 + size);
+    };
+    stbi_write_png_to_func(write_back, &buffer_vector, bitmap.width(),
+                           bitmap.height(), bitmap.channel(), bitmap.data(),
+                           bitmap.stride());
+
+    return buffer_vector;
+  }
+
+  std::string common_extension() const { return ".png"; }
+};
+
+class Exporter_stb_bmp : public Exporter {
+public:
+  std::optional<std::vector<uint8_t>> export_to_buffer(const Bitmap &bitmap) {
+    std::vector<uint8_t> buffer_vector{};
+    auto write_back = [](void *context, void *data, int size) {
+      auto buffer = reinterpret_cast<std::vector<uint8_t> *>(context);
+      auto data_u8 = reinterpret_cast<uint8_t *>(data);
+      buffer->insert(buffer->end(), data_u8, data_u8 + size);
+    };
+    stbi_write_bmp_to_func(write_back, &buffer_vector, bitmap.width(),
+                           bitmap.height(), bitmap.channel(), bitmap.data());
+
+    return buffer_vector;
+  }
+
+  std::string common_extension() const { return ".bmp"; }
+};
 } // namespace image_mix
