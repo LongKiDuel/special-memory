@@ -1,11 +1,14 @@
 #include <cassert>
 #include <cstdint>
+#include <cstdlib>
 #include <curl/curl.h>
 #include <curl/easy.h>
 #include <curl/system.h>
+#include <curl/urlapi.h>
 #include <functional>
 #include <iostream>
 #include <memory>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -227,9 +230,58 @@ private:
 };
 
 std::string get_curl_version() { return curl_version(); }
+
+class Url_handle {
+public:
+  Url_handle() {
+    handle_ = curl_url();
+    assert(handle_);
+  }
+  CURLU *handle_{};
+  // if failed, return error info.
+  std::optional<std::string> parse(const std::string &url) {
+    auto rc = curl_url_set(handle_, CURLUPART_URL, url.c_str(), 0);
+    if (rc) {
+      return curl_url_strerror(rc);
+    }
+    return {};
+  }
+  std::optional<std::string> get_path() {
+    char *path{};
+    auto rc = curl_url_get(handle_, CURLUPART_PATH, &path, 0);
+
+    std::optional<std::string> result;
+    if (!rc) {
+      result = path;
+    }
+    if (path) {
+      curl_free(path);
+    }
+    return result;
+  }
+  ~Url_handle() {
+    curl_url_cleanup(handle_);
+    handle_ = nullptr;
+  }
+};
 } // namespace curlpp
 
+void url_test() {
+  auto try_url = [](std::string url) {
+    curlpp::Url_handle handle;
+    auto err = handle.parse(url);
+    if (err) {
+      std::cerr << "Failed to parse: " << url << " -> " << err.value() << "\n";
+    }
+    assert(!err);
+    std::cout << handle.get_path().value() << "\n";
+  };
+
+  try_url("file:///abc/123");
+  try_url("http://tome.com/source?name=ro");
+}
 int main() {
+  url_test();
 
   curlpp::Extened_easy_handle handle{};
 
